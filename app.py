@@ -66,21 +66,13 @@ if menu == "🏠 Home":
 
     st.title("🧠 AI Memory Assistant")
 
-    st.markdown("""
-    ### Your External Brain
-
-    This system helps students:
-
-    - Track studied topics  
-    - Take quizzes  
-    - Monitor memory strength  
-    - Identify weak topics  
-    - Schedule revisions  
-    """)
+    st.markdown("### Your Personal Learning Intelligence System")
 
     st.divider()
 
-    st.subheader("📊 Performance Overview")
+    col1, col2, col3 = st.columns(3)
+
+    total_topics = len(pd.read_csv(memory_file))
 
     total_quizzes = len(st.session_state.quiz_scores)
 
@@ -89,20 +81,18 @@ if menu == "🏠 Home":
         if st.session_state.quiz_scores else 0
     )
 
-    weak_attempts = sum(
-        1 for s in st.session_state.quiz_scores if s < 50
-    )
-
-    col1, col2, col3 = st.columns(3)
-
     with col1:
-        st.metric("📚 Total Quizzes", total_quizzes)
+        st.metric("📚 Topics Stored", total_topics)
 
     with col2:
-        st.metric("🧠 Avg Score", f"{avg_score:.2f}")
+        st.metric("📝 Quizzes Taken", total_quizzes)
 
     with col3:
-        st.metric("⚠ Weak Attempts", weak_attempts)
+        st.metric("🧠 Avg Score", f"{avg_score:.2f}")
+
+    st.divider()
+
+    st.info("💡 Tip: Take quizzes regularly to improve your memory score!")
 
 # ==========================
 # 📚 ADD TOPIC
@@ -224,12 +214,40 @@ elif menu == "📊 Dashboard":
 
     if len(memory_db) == 0:
         st.warning("No topics available.")
-    
+
     else:
 
-        st.subheader("📋 Data Overview")
-        st.dataframe(memory_db, use_container_width=True)
+        col1, col2 = st.columns(2)
 
+        with col1:
+            st.subheader("📊 Topic Performance")
+
+            fig1, ax1 = plt.subplots()
+            ax1.bar(memory_db["Topic"], memory_db["Memory_Score"])
+            ax1.set_ylim(0, 100)
+            plt.xticks(rotation=25)
+
+            st.pyplot(fig1)
+
+        with col2:
+            st.subheader("📈 Learning Trend")
+
+            if len(st.session_state.quiz_scores) > 0:
+
+                fig2, ax2 = plt.subplots()
+
+                ax2.plot(
+                    range(1, len(st.session_state.quiz_scores) + 1),
+                    st.session_state.quiz_scores,
+                    marker="o"
+                )
+
+                ax2.set_ylim(0, 100)
+
+                st.pyplot(fig2)
+
+            else:
+                st.info("No quiz data yet")
         # ==========================
         # 📊 BAR CHART: Topic vs Memory Score
         # ==========================
