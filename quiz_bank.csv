@@ -1,0 +1,6 @@
+Topic,Question,Answer
+Decision Trees,What is entropy?,Measure of impurity
+Decision Trees,What is information gain?,Reduction in entropy
+Decision Trees,What are leaf nodes?,Final prediction nodes
+DBMS,What is normalization?,Removing redundancy
+DBMS,What is a primary key?,Unique identifier
