@@ -41,6 +41,7 @@ menu = st.sidebar.radio(
     [
         "🏠 Home",
         "📚 Add Topic",
+        "📝 Take Quiz",
         "📊 Dashboard",
         "⚠ Topics At Risk",
         "🔔 Revision Alerts"
@@ -208,6 +209,9 @@ elif menu == "🔔 Revision Alerts":
             ],
             use_container_width=True
         )
+
+                "Memory Score Updated!"
+            )
 elif menu == "📝 Take Quiz":
 
     st.title("📝 Take Quiz")
