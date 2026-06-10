@@ -208,3 +208,98 @@ elif menu == "🔔 Revision Alerts":
             ],
             use_container_width=True
         )
+elif menu == "📝 Take Quiz":
+
+    st.title("📝 Take Quiz")
+
+    quiz_db = pd.read_csv("quiz_bank.csv")
+
+    topics = quiz_db["Topic"].unique()
+
+    selected_topic = st.selectbox(
+        "Select Topic",
+        topics
+    )
+
+    questions = quiz_db[
+        quiz_db["Topic"] == selected_topic
+    ]
+
+    score = 0
+
+    st.subheader(f"Quiz on {selected_topic}")
+
+    answers = []
+
+    for index, row in questions.iterrows():
+
+        user_answer = st.text_input(
+            row["Question"],
+            key=index
+        )
+
+        answers.append(
+            (
+                user_answer,
+                row["Answer"]
+            )
+        )
+
+    if st.button("Submit Quiz"):
+
+        correct = 0
+        wrong = 0
+
+        for user_answer, actual_answer in answers:
+
+            if user_answer.strip().lower() == str(actual_answer).strip().lower():
+
+                correct += 1
+
+            else:
+
+                wrong += 1
+
+        total = correct + wrong
+
+        if total > 0:
+
+            accuracy = correct / total
+
+            score = accuracy * 100
+
+        st.success(
+            f"Correct: {correct} | Wrong: {wrong}"
+        )
+
+        st.metric(
+            "Memory Score",
+            round(score, 2)
+        )
+
+        # Update Memory Database
+
+        memory_db = pd.read_csv(memory_file)
+
+        row_index = memory_db[
+            memory_db["Topic"] == selected_topic
+        ].index
+
+        if len(row_index) > 0:
+
+            idx = row_index[0]
+
+            memory_db.loc[idx, "Memory_Score"] = score
+
+            memory_db.loc[idx, "Correct_Answers"] = correct
+
+            memory_db.loc[idx, "Wrong_Answers"] = wrong
+
+            memory_db.to_csv(
+                memory_file,
+                index=False
+            )
+
+            st.success(
+                "Memory Score Updated!"
+            )
