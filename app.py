@@ -218,30 +218,59 @@ elif menu == "📝 Take Quiz":
 # ==========================
 elif menu == "📊 Dashboard":
 
-    st.title("📊 Memory Dashboard")
+    st.title("📊 AI Learning Analytics Dashboard")
 
     memory_db = pd.read_csv(memory_file)
 
     if len(memory_db) == 0:
         st.warning("No topics available.")
-
+    
     else:
 
+        st.subheader("📋 Data Overview")
         st.dataframe(memory_db, use_container_width=True)
 
-        st.subheader("📈 Memory Score Chart")
+        # ==========================
+        # 📊 BAR CHART: Topic vs Memory Score
+        # ==========================
+        st.subheader("📊 Topic Performance")
 
-        fig, ax = plt.subplots()
+        fig1, ax1 = plt.subplots()
 
-        ax.bar(memory_db["Topic"], memory_db["Memory_Score"])
+        ax1.bar(
+            memory_db["Topic"],
+            memory_db["Memory_Score"]
+        )
 
-        ax.set_ylabel("Memory Score")
-        ax.set_ylim(0, 100)
+        ax1.set_ylabel("Memory Score")
+        ax1.set_ylim(0, 100)
+        plt.xticks(rotation=25)
 
-        plt.xticks(rotation=20)
+        st.pyplot(fig1)
 
-        st.pyplot(fig)
+        # ==========================
+        # 📉 LINE CHART: Quiz Score Trend
+        # ==========================
+        st.subheader("📉 Learning Progress Trend")
 
+        if len(st.session_state.quiz_scores) > 0:
+
+            fig2, ax2 = plt.subplots()
+
+            ax2.plot(
+                range(1, len(st.session_state.quiz_scores) + 1),
+                st.session_state.quiz_scores,
+                marker="o"
+            )
+
+            ax2.set_xlabel("Quiz Attempt")
+            ax2.set_ylabel("Score")
+            ax2.set_ylim(0, 100)
+
+            st.pyplot(fig2)
+
+        else:
+            st.info("Take quizzes to see progress trend 📊")
 # ==========================
 # ⚠ TOPICS AT RISK
 # ==========================
