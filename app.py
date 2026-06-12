@@ -235,23 +235,43 @@ elif menu == "🤖 Generate Quiz":
 
         sentences = selected_note.split(".")
 
-        generated_questions = []
+       generated_mcqs = []
 
-        for sentence in sentences[:5]:
+for sentence in sentences[:5]:
 
-            sentence = sentence.strip()
+    sentence = sentence.strip()
 
-            if len(sentence) > 20:
+    if len(sentence) > 30:
 
-                question = (
-                    "Explain: " + sentence[:80]
-                )
+        mcq = {
+            "question": "Which statement appears in your notes?",
+            "options": [
+                sentence,
+                "None of the above",
+                "Random Concept A",
+                "Random Concept B"
+            ],
+            "answer": sentence
+        }
 
-                generated_questions.append(question)
+        generated_mcqs.append(mcq)
 
-        for i, q in enumerate(generated_questions):
+for i, mcq in enumerate(generated_mcqs):
 
-            st.write(f"Q{i+1}. {q}")
+    st.subheader(f"Q{i+1}")
+
+    st.write(mcq["question"])
+
+    selected = st.radio(
+        "Choose Answer",
+        mcq["options"],
+        key=f"mcq_{i}"
+    )
+
+    if selected == mcq["answer"]:
+        st.success("Correct")
+    else:
+        st.error("Incorrect")
 # ==========================
 # 📝 TAKE QUIZ (UPDATED - KPI TRACKING)
 # ==========================
