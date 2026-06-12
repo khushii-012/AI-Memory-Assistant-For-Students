@@ -17,20 +17,40 @@ def generate_mcqs_with_ai(notes_text):
     )
 
     prompt = f"""
-    Read these study notes and generate 5 MCQs.
+You are an exam question generator.
 
-    For each MCQ provide:
+Generate exactly 5 MCQs from the notes.
 
-    Question:
-    A)
-    B)
-    C)
-    D)
-    Correct Answer:
+Rules:
+1. Do NOT show answers immediately.
+2. Do NOT provide explanations.
+3. Each question must have 4 options.
+4. Only one option should be correct.
+5. Put the correct answer at the very end under a separate section called ANSWER KEY.
 
-    Notes:
-    {notes_text[:3000]}
-    """
+Format:
+
+Q1:
+Question text
+
+A)
+B)
+C)
+D)
+
+Q2:
+...
+
+ANSWER KEY:
+Q1 - B
+Q2 - A
+Q3 - D
+Q4 - C
+Q5 - B
+
+Notes:
+{notes_text[:3000]}
+"""
 
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
