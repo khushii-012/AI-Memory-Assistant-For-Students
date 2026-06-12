@@ -16,7 +16,7 @@ def generate_mcqs_with_ai(notes_text):
         api_key=st.secrets["GROQ_API_KEY"]
     )
 
-   prompt = f"""
+ prompt = f"""
 Generate exactly 5 multiple choice questions from the notes.
 
 STRICT RULES:
