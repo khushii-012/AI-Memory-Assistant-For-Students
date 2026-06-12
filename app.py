@@ -133,6 +133,38 @@ elif menu == "📚 Add Topic":
     st.subheader("Stored Topics")
     st.dataframe(pd.read_csv(memory_file), use_container_width=True)
 
+
+# ==========================
+# 📄 UPLOAD NOTES
+# ==========================
+
+elif menu == "📄 Upload Notes":
+
+    st.title("📄 Upload Notes")
+
+    uploaded_file = st.file_uploader(
+        "Upload a PDF file",
+        type=["pdf"]
+    )
+
+    if uploaded_file is not None:
+
+        pdf = PdfReader(uploaded_file)
+
+        extracted_text = ""
+
+        for page in pdf.pages:
+            extracted_text += page.extract_text() + "\n"
+
+        st.success("PDF processed successfully!")
+
+        st.subheader("📖 Extracted Text Preview")
+
+        st.text_area(
+            "Preview",
+            extracted_text[:5000],
+            height=300
+        )
 # ==========================
 # 📝 TAKE QUIZ (UPDATED - KPI TRACKING)
 # ==========================
