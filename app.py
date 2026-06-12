@@ -17,6 +17,26 @@ st.set_page_config(
     layout="wide"
 )
 
+st.markdown("""
+<style>
+    .main {
+        background-color: #0f1117;
+    }
+    h1 {
+        color: #00ffcc;
+        text-align: center;
+    }
+    .stButton>button {
+        background-color: #00ffcc;
+        color: black;
+        border-radius: 10px;
+        height: 3em;
+        width: 100%;
+        font-weight: bold;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 # ==========================
 # FILES
 # ==========================
