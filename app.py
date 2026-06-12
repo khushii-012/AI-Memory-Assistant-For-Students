@@ -516,10 +516,18 @@ elif menu == "🧪 AI Test":
 
     st.title("AI Test")
 
+    st.write("HF_TOKEN exists:", "HF_TOKEN" in st.secrets)
+
     if st.button("Generate AI Questions"):
 
-        result = generate_mcqs_with_ai(
-            "Python has several built in data types such as int, float and string."
-        )
+        try:
 
-        st.write(result)
+            result = generate_mcqs_with_ai(
+                "Python has several built in data types such as int, float and string."
+            )
+
+            st.write(result)
+
+        except Exception as e:
+
+            st.error(str(e))
