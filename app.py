@@ -14,40 +14,68 @@ st.set_page_config(page_title="NeuroLearn AI", page_icon="🧠", layout="wide")
 
 st.markdown("""
 <style>
-    body { background-color: #0f1117; color: white; }
-    .main { background-color: #0f1117; }
 
-    h1, h2, h3 { color: #00ffcc; text-align: center; }
+/* GLOBAL BACKGROUND */
+.main {
+    background: linear-gradient(135deg, #0f1117, #1a1d24);
+}
 
-    /* FEATURE CARDS */
-    .card {
-        background-color: #1a1d24;
-        padding: 20px;
-        border-radius: 15px;
-        text-align: center;
-        cursor: pointer;
-        transition: 0.3s;
-        box-shadow: 0px 0px 10px rgba(0,255,204,0.2);
-    }
+/* TITLE */
+h1 {
+    text-align: center;
+    color: #00ffcc;
+    font-size: 42px;
+    font-weight: 800;
+    margin-bottom: 10px;
+}
 
-    .card:hover {
-        transform: scale(1.05);
-        box-shadow: 0px 0px 20px rgba(0,255,204,0.5);
-    }
+/* SUBTITLE */
+.subtitle {
+    text-align: center;
+    color: #aaa;
+    font-size: 18px;
+    margin-bottom: 40px;
+}
 
-    .grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 20px;
-    }
+/* FEATURE CARD */
+.feature-card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(0,255,204,0.2);
+    padding: 25px;
+    border-radius: 18px;
+    text-align: center;
+    transition: 0.3s;
+    cursor: pointer;
+    box-shadow: 0 0 15px rgba(0,255,204,0.05);
+}
 
-    .btn {
-        background-color: #00ffcc;
-        padding: 10px;
-        border-radius: 10px;
-        color: black;
-        font-weight: bold;
-    }
+.feature-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 0 25px rgba(0,255,204,0.3);
+    border: 1px solid rgba(0,255,204,0.6);
+}
+
+/* BUTTON */
+.stButton>button {
+    background: linear-gradient(90deg, #00ffcc, #00b3ff);
+    color: black;
+    border-radius: 12px;
+    height: 3em;
+    font-weight: bold;
+    width: 100%;
+    border: none;
+}
+
+/* BADGE STYLE */
+.badge {
+    background: #00ffcc;
+    color: black;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -123,36 +151,82 @@ Notes:
 # ==========================
 def home():
 
-    st.title("🧠 NeuroLearn AI Dashboard")
+    st.title("🧠 NeuroLearn AI")
+    st.markdown('<p class="subtitle">Turn your notes into smart exams with AI-powered learning</p>', unsafe_allow_html=True)
 
-    st.markdown("### 🚀 Choose what you want to do")
+    st.markdown("---")
 
+    # TOP STATS SECTION
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        if st.button("📄 Upload Notes"):
+        st.markdown("""
+        <div class="feature-card">
+            <h3>📄 Notes Engine</h3>
+            <p>Upload PDF & convert into AI-ready knowledge</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if st.button("Open Notes"):
             st.session_state.page = "upload"
 
     with col2:
-        if st.button("🤖 Generate Exam"):
+        st.markdown("""
+        <div class="feature-card">
+            <h3>🤖 AI Exam Generator</h3>
+            <p>Auto-generate MCQs using LLM intelligence</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if st.button("Generate Exam"):
             st.session_state.page = "generate"
 
     with col3:
-        if st.button("🧠 Take Exam"):
+        st.markdown("""
+        <div class="feature-card">
+            <h3>🧠 Live Exam Mode</h3>
+            <p>Timed exam with smart navigation system</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if st.button("Start Exam"):
             st.session_state.page = "exam"
 
-    col4, col5, col6 = st.columns(3)
+    st.markdown("---")
+
+    # SECOND ROW
+    col4, col5 = st.columns(2)
 
     with col4:
-        if st.button("📊 Results"):
+        st.markdown("""
+        <div class="feature-card">
+            <h3>📊 Analytics Dashboard</h3>
+            <p>View performance, score & weak areas</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if st.button("View Results"):
             st.session_state.page = "result"
 
     with col5:
-        if st.button("🏆 Leaderboard"):
+        st.markdown("""
+        <div class="feature-card">
+            <h3>🏆 Leaderboard</h3>
+            <p>Compete with top learners & track ranking</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if st.button("View Leaderboard"):
             st.session_state.page = "leaderboard"
 
-    with col6:
-        st.info("🔥 AI Powered Learning System")
+    st.markdown("---")
+
+    # BOTTOM INFO PANEL
+    st.markdown("""
+    <div style='text-align:center; padding:20px; color:#888;'>
+        ⚡ Powered by Groq AI • Built for Smart Learning • NeuroLearn v2.0
+    </div>
+    """, unsafe_allow_html=True)
 
 # ==========================
 # UPLOAD
