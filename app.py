@@ -5,6 +5,45 @@ import matplotlib.pyplot as plt
 import os
 from datetime import datetime
 import numpy as np
+import requests
+import json
+
+
+def generate_mcqs_with_ai(notes_text):
+
+    API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
+
+    headers = {
+        "Authorization": f"Bearer {st.secrets['HF_TOKEN']}"
+    }
+
+    prompt = f"""
+    Read the following study notes and generate 5 multiple choice questions.
+
+    Format:
+    Question:
+    A)
+    B)
+    C)
+    D)
+    Answer:
+
+    Notes:
+    {notes_text[:3000]}
+    """
+
+    payload = {
+        "inputs": prompt
+    }
+
+    response = requests.post(
+        API_URL,
+        headers=headers,
+        json=payload,
+        timeout=60
+    )
+
+    return response.json()
 
 # ==========================
 # PAGE CONFIG
@@ -67,9 +106,11 @@ menu = st.sidebar.radio(
         "📄 Upload Notes",
         "🤖 Generate Quiz",
         "📝 Take Quiz",
+        "🧪 AI Test"
         "📊 Dashboard",
         "⚠ Topics At Risk",
         "🔔 Revision Alerts"
+        
     ]
 )
 
@@ -326,6 +367,21 @@ elif menu == "📝 Take Quiz":
 
             st.success(f"Correct: {correct} | Wrong: {wrong}")
             st.metric("Memory Score", round(score, 2))
+
+
+
+
+            elif menu == "🧪 AI Test":
+
+    st.title("AI Test")
+
+    if st.button("Generate AI Questions"):
+
+        result = generate_mcqs_with_ai(
+            "Python has several built in data types such as int, float and string."
+        )
+
+        st.write(result)
 
             # ==========================
             # SAVE KPI DATA (NEW)
