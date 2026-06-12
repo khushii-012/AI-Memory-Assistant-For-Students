@@ -7,6 +7,17 @@ import time
 from datetime import datetime
 from groq import Groq
 
+
+def top_bar():
+    col1, col2, col3 = st.columns([1, 6, 1])
+
+    with col1:
+        if st.button("🏠 Home"):
+            go_home()
+
+    with col3:
+        st.markdown("🧠 NeuroLearn AI")
+
 # ==========================
 # PAGE CONFIG
 # ==========================
@@ -236,7 +247,7 @@ def home():
 # UPLOAD
 # ==========================
 def upload():
-
+    top_bar() 
     st.title("📄 Upload Notes")
 
     # 🔙 BACK BUTTON (IMPORTANT FIX)
@@ -266,6 +277,8 @@ def upload():
 # ==========================
 def generate():
 
+    top_bar() 
+    
     st.title("🤖 Generate Exam")
 
     db = pd.read_csv(notes_file)
@@ -292,6 +305,8 @@ def generate():
 # EXAM MODE
 # ==========================
 def exam():
+
+    top_bar() 
 
     st.title("🧠 Exam Mode")
 
@@ -330,6 +345,8 @@ def exam():
 # ==========================
 def result():
 
+    top_bar() 
+
     st.title("📊 Results")
 
     q = st.session_state.questions
@@ -358,6 +375,8 @@ def result():
 # LEADERBOARD
 # ==========================
 def leaderboard():
+
+    top_bar() 
 
     st.title("🏆 Leaderboard")
 
