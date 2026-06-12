@@ -311,15 +311,16 @@ if st.button("Generate"):
 # ==========================
 def exam():
 
-    top_bar() 
+    top_bar()
 
     st.title("🧠 Exam Mode")
 
     q = st.session_state.questions
 
- if not t.session_state.exam_ready or len(q) == 0:
-    st.warning("Generate exam first")
-    return
+    # ❌ FIXED INDENTATION + TYPO (st.session_state not t.session_state)
+    if not st.session_state.exam_ready or len(q) == 0:
+        st.warning("Generate exam first")
+        return
 
     i = st.session_state.index
     question = q[i]
@@ -340,11 +341,10 @@ def exam():
 
             st.session_state.answers[i] = choice
 
-            if i < len(q)-1:
+            if i < len(q) - 1:
                 st.session_state.index += 1
 
             st.rerun()
-
 # ==========================
 # RESULT
 # ==========================
