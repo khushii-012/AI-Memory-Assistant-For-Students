@@ -1,238 +1,284 @@
 from PyPDF2 import PdfReader
 import streamlit as st
 import pandas as pd
-import os
+import numpy as np
 import json
+import os
+import time
 from datetime import datetime
 from groq import Groq
 
 # ==========================
 # CONFIG
 # ==========================
-st.set_page_config(page_title="AI Memory Assistant", page_icon="🧠", layout="wide")
+st.set_page_config(
+    page_title="NeuroLearn AI",
+    page_icon="🧠",
+    layout="wide"
+)
 
 # ==========================
 # FILES
 # ==========================
-notes_file = "notes_database.csv"
+notes_file = "notes.csv"
+leaderboard_file = "leaderboard.csv"
 
 if not os.path.exists(notes_file):
     pd.DataFrame(columns=["Topic", "Notes"]).to_csv(notes_file, index=False)
 
-# ==========================
-# SESSION STATE INIT
-# ==========================
-if "exam_questions" not in st.session_state:
-    st.session_state.exam_questions = []
-
-if "exam_index" not in st.session_state:
-    st.session_state.exam_index = 0
-
-if "exam_answers" not in st.session_state:
-    st.session_state.exam_answers = {}
-
-if "exam_finished" not in st.session_state:
-    st.session_state.exam_finished = False
+if not os.path.exists(leaderboard_file):
+    pd.DataFrame(columns=["Name", "Score", "Difficulty", "Topic", "Date"]).to_csv(leaderboard_file, index=False)
 
 # ==========================
-# AI QUIZ GENERATOR
+# SESSION STATE
 # ==========================
-def generate_mcqs_with_ai(notes_text):
+for key in ["questions", "index", "answers", "score", "start_time", "time_limit", "exam_active"]:
+    if key not in st.session_state:
+        st.session_state[key] = None if key in ["start_time", "time_limit"] else 0
+
+st.session_state.answers = st.session_state.answers or {}
+
+# ==========================
+# AI ENGINE
+# ==========================
+def generate_mcqs(notes, difficulty):
 
     client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
     prompt = f"""
-You are an expert teacher.
+You are a strict exam creator.
 
-Generate EXACTLY 5 multiple-choice questions.
+Generate 5 MCQs.
 
-Return ONLY valid JSON:
+Difficulty: {difficulty}
+
+Return ONLY JSON:
 
 {{
-  "questions": [
-    {{
-      "question": "Question text",
-      "options": ["A", "B", "C", "D"],
-      "answer": "A"
-    }}
-  ]
+ "questions": [
+  {{
+   "question": "...",
+   "options": ["A","B","C","D"],
+   "answer": "A"
+  }}
+ ]
 }}
 
-Rules:
-- exactly 5 questions
-- answer must be A/B/C/D
-- no explanation
-
 Notes:
-{notes_text[:3000]}
+{notes[:3000]}
 """
 
-    response = client.chat.completions.create(
+    res = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.2
     )
 
-    return response.choices[0].message.content
-
-
-def parse_mcqs(raw):
     try:
-        return json.loads(raw)["questions"]
+        return json.loads(res.choices[0].message.content)["questions"]
     except:
         return []
 
 # ==========================
+# UI LANDING PAGE
+# ==========================
+st.markdown("""
+# 🧠 NeuroLearn AI
+
+### 🚀 Turn Your Notes Into Smart Exams
+
+💡 Upload Notes → AI Quiz → Exam Mode → Leaderboard
+
+---
+
+### 🎯 Features:
+- 🧠 AI Exam Generator  
+- ⏱️ Timed Exams  
+- 🏆 Leaderboard  
+- 📊 Weak Topic Detection  
+- 🎮 Game-like Learning  
+
+---
+
+👉 Start your learning journey below 👇
+""")
+
+# ==========================
 # SIDEBAR
 # ==========================
-menu = st.sidebar.radio("Navigation", [
+menu = st.sidebar.radio("📌 Menu", [
     "🏠 Home",
     "📄 Upload Notes",
-    "🤖 Generate Quiz",
-    "🧠 Exam Mode"
+    "🤖 Generate Exam",
+    "🧠 Exam Mode",
+    "🏆 Leaderboard"
 ])
 
 # ==========================
 # HOME
 # ==========================
 if menu == "🏠 Home":
-    st.title("🧠 AI Memory Assistant")
-    st.markdown("### AI Powered Learning + Exam System")
-    st.info("Upload notes → Generate quiz → Take exam mode like Google Forms")
+    st.success("Welcome! Make learning addictive 🎯")
 
 # ==========================
 # UPLOAD NOTES
 # ==========================
 elif menu == "📄 Upload Notes":
 
-    st.title("📄 Upload Notes (PDF)")
+    st.title("📄 Upload Study Notes")
 
-    uploaded_file = st.file_uploader("Upload PDF", type=["pdf"])
+    file = st.file_uploader("Upload PDF", type=["pdf"])
+    text = ""
 
-    extracted_text = ""
+    if file:
+        pdf = PdfReader(file)
+        for p in pdf.pages:
+            text += p.extract_text() or ""
 
-    if uploaded_file:
-        pdf = PdfReader(uploaded_file)
+        st.text_area("Preview", text[:2000])
 
-        for page in pdf.pages:
-            extracted_text += page.extract_text() or ""
+        topic = st.text_input("Topic")
 
-        st.success("PDF Extracted")
-
-        st.text_area("Preview", extracted_text[:3000], height=200)
-
-        topic = st.text_input("Topic Name")
-
-        if st.button("Save Notes") and topic:
-
+        if st.button("Save"):
             db = pd.read_csv(notes_file)
-
-            new_row = {
-                "Topic": topic,
-                "Notes": extracted_text
-            }
-
-            db.loc[len(db)] = new_row
+            db.loc[len(db)] = [topic, text]
             db.to_csv(notes_file, index=False)
-
-            st.success("Saved Successfully")
+            st.success("Saved!")
 
 # ==========================
-# GENERATE QUIZ
+# GENERATE EXAM
 # ==========================
-elif menu == "🤖 Generate Quiz":
+elif menu == "🤖 Generate Exam":
 
-    st.title("🤖 AI Quiz Generator")
+    st.title("🤖 AI Exam Generator")
 
     db = pd.read_csv(notes_file)
 
-    if len(db) == 0:
-        st.warning("No notes found")
-    else:
+    topic = st.selectbox("Topic", db["Topic"])
+    difficulty = st.selectbox("Difficulty", ["Easy", "Medium", "Hard"])
 
-        topic = st.selectbox("Select Topic", db["Topic"])
-        notes_text = db[db["Topic"] == topic]["Notes"].values[0]
+    if st.button("Generate Exam"):
 
-        if st.button("Generate Quiz"):
+        notes = db[db["Topic"] == topic]["Notes"].values[0]
 
-            raw = generate_mcqs_with_ai(notes_text)
-            questions = parse_mcqs(raw)
+        st.session_state.questions = generate_mcqs(notes, difficulty)
+        st.session_state.index = 0
+        st.session_state.answers = {}
+        st.session_state.score = 0
+        st.session_state.exam_active = True
 
-            if not questions:
-                st.error("AI failed to generate quiz")
-            else:
-                st.session_state.exam_questions = questions
-                st.session_state.exam_index = 0
-                st.session_state.exam_answers = {}
-                st.session_state.exam_finished = False
+        # Timer
+        st.session_state.start_time = time.time()
+        st.session_state.time_limit = 120  # 2 minutes
 
-                st.success("Quiz Generated! Go to Exam Mode")
+        st.success("Exam Ready!")
 
 # ==========================
-# EXAM MODE (GOOGLE FORM STYLE)
+# EXAM MODE
 # ==========================
 elif menu == "🧠 Exam Mode":
 
-    st.title("🧠 Exam Mode (Google Forms Style)")
+    st.title("🧠 Live Exam Mode")
 
-    questions = st.session_state.exam_questions
+    q = st.session_state.questions
 
-    if not questions:
-        st.warning("Please generate quiz first")
+    if not q:
+        st.warning("Generate exam first")
         st.stop()
 
-    idx = st.session_state.exam_index
-    q = questions[idx]
+    # TIMER
+    elapsed = time.time() - st.session_state.start_time
+    remaining = st.session_state.time_limit - elapsed
 
-    # progress bar
-    st.progress((idx + 1) / len(questions))
+    if remaining <= 0:
+        st.error("⏰ Time Up! Auto Submitting...")
 
-    st.markdown(f"### Question {idx+1} / {len(questions)}")
-    st.subheader(q["question"])
+        st.session_state.exam_active = False
 
-    choice = st.radio("Select answer:", q["options"], key=f"q_{idx}")
+    st.progress(max(0, remaining / st.session_state.time_limit))
+
+    i = st.session_state.index
+    question = q[i]
+
+    st.subheader(f"Q{i+1}. {question['question']}")
+
+    choice = st.radio("Choose:", question["options"], key=i)
 
     col1, col2 = st.columns(2)
 
     with col1:
-        if st.button("⬅ Previous") and idx > 0:
-            st.session_state.exam_index -= 1
+        if st.button("⬅ Prev") and i > 0:
+            st.session_state.index -= 1
             st.rerun()
 
     with col2:
-        if st.button("Save & Next ➡"):
+        if st.button("Next ➡"):
 
-            st.session_state.exam_answers[idx] = choice
+            st.session_state.answers[i] = choice
 
-            if idx < len(questions) - 1:
-                st.session_state.exam_index += 1
-                st.rerun()
+            if i < len(q) - 1:
+                st.session_state.index += 1
             else:
-                st.session_state.exam_finished = True
-                st.rerun()
+                st.session_state.exam_active = False
+
+            st.rerun()
 
 # ==========================
-# RESULT PAGE
+# RESULT + LEADERBOARD + WEAK TOPIC
 # ==========================
-if st.session_state.get("exam_finished", False):
+if st.session_state.get("exam_active") == False and st.session_state.questions:
 
-    st.title("🎯 Final Result")
+    st.title("🎯 Result Analysis")
 
-    questions = st.session_state.exam_questions
-    answers = st.session_state.exam_answers
+    q = st.session_state.questions
+    ans = st.session_state.answers
 
     score = 0
+    wrong_topics = []
 
-    for i, q in enumerate(questions):
+    for i, item in enumerate(q):
 
-        correct_index = ["A", "B", "C", "D"].index(q["answer"])
-        correct = q["options"][correct_index]
+        correct = item["options"][["A","B","C","D"].index(item["answer"])]
 
-        if answers.get(i) == correct:
+        if ans.get(i) == correct:
             score += 1
+        else:
+            wrong_topics.append(item["question"])
 
-    st.success(f"Your Score: {score} / {len(questions)}")
+    st.success(f"Score: {score}/{len(q)}")
 
-    if st.button("Restart Exam"):
-        st.session_state.clear()
-        st.rerun()
+    # ================= LEADERBOARD =================
+    name = st.text_input("Enter Name for Leaderboard")
+
+    if st.button("Save Score") and name:
+
+        lb = pd.read_csv(leaderboard_file)
+
+        lb.loc[len(lb)] = [
+            name,
+            score,
+            "Medium",
+            "AI Exam",
+            datetime.now().strftime("%Y-%m-%d")
+        ]
+
+        lb.to_csv(leaderboard_file, index=False)
+
+        st.success("Saved to Leaderboard!")
+
+    # ================= WEAK DETECTION =================
+    st.subheader("📉 Weak Areas")
+
+    for w in wrong_topics:
+        st.warning(w)
+
+# ==========================
+# LEADERBOARD
+# ==========================
+elif menu == "🏆 Leaderboard":
+
+    st.title("🏆 Top Students")
+
+    lb = pd.read_csv(leaderboard_file)
+
+    st.dataframe(lb.sort_values(by="Score", ascending=False))
