@@ -106,7 +106,7 @@ menu = st.sidebar.radio(
         "📄 Upload Notes",
         "🤖 Generate Quiz",
         "📝 Take Quiz",
-        "🧪 AI Test"
+        "🧪 AI Test",
         "📊 Dashboard",
         "⚠ Topics At Risk",
         "🔔 Revision Alerts"
@@ -368,21 +368,6 @@ elif menu == "📝 Take Quiz":
             st.success(f"Correct: {correct} | Wrong: {wrong}")
             st.metric("Memory Score", round(score, 2))
 
-
-
-
-            elif menu == "🧪 AI Test":
-
-    st.title("AI Test")
-
-    if st.button("Generate AI Questions"):
-
-        result = generate_mcqs_with_ai(
-            "Python has several built in data types such as int, float and string."
-        )
-
-        st.write(result)
-
             # ==========================
             # SAVE KPI DATA (NEW)
             # ==========================
@@ -523,3 +508,18 @@ elif menu == "🔔 Revision Alerts":
         memory_db[["Topic", "Next_Revision_Date", "Memory_Score"]],
         use_container_width=True
     )
+
+# ==========================
+# 🧪 AI TEST
+# ==========================
+elif menu == "🧪 AI Test":
+
+    st.title("AI Test")
+
+    if st.button("Generate AI Questions"):
+
+        result = generate_mcqs_with_ai(
+            "Python has several built in data types such as int, float and string."
+        )
+
+        st.write(result)
