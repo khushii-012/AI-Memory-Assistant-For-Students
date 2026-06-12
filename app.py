@@ -284,7 +284,7 @@ def generate():
 
     db = pd.read_csv(notes_file)
 
-    # ✅ FIXED INDENTATION
+
     if len(db) == 0:
         st.warning("Upload notes first")
         return
@@ -318,8 +318,8 @@ def exam():
 
     q = st.session_state.questions
 
-    # ❌ FIXED INDENTATION + TYPO (st.session_state not t.session_state)
-    if not st.session_state.exam_ready or len(q) == 0:
+    
+    if len(q) == 0 or not st.session_state.get("exam_ready", False):
         st.warning("Generate exam first")
         return
 
