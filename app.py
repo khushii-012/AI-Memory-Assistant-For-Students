@@ -280,19 +280,19 @@ elif menu == "🤖 Generate Quiz":
             notes_db["Topic"] == selected_topic
         ]["Notes"].values[0]
 
-   st.subheader("AI Generated Quiz")
+        st.subheader("AI Generated Quiz")
 
-   if st.button("Generate AI Quiz"):
+        if st.button("Generate AI Quiz"):
 
-     with st.spinner("Generating questions..."):
+            with st.spinner("Generating questions..."):
 
-        result = generate_mcqs_with_ai(selected_note)
+                result = generate_mcqs_with_ai(selected_note)
 
-        st.text_area(
-            "Generated Quiz",
-            result,
-            height=500
-        )
+                st.text_area(
+                    "Generated Quiz",
+                    result,
+                    height=500
+                )
        
 # ==========================
 # 📝 TAKE QUIZ (UPDATED - KPI TRACKING)
