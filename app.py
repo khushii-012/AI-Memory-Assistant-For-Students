@@ -7,43 +7,43 @@ from datetime import datetime
 import numpy as np
 import requests
 import json
+from groq import Groq
 
 
 def generate_mcqs_with_ai(notes_text):
 
-    API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
-
-    headers = {
-        "Authorization": f"Bearer {st.secrets['HF_TOKEN']}"
-    }
+    client = Groq(
+        api_key=st.secrets["GROQ_API_KEY"]
+    )
 
     prompt = f"""
-    Read the following study notes and generate 5 multiple choice questions.
+    Read these study notes and generate 5 MCQs.
 
-    Format:
+    For each MCQ provide:
+
     Question:
     A)
     B)
     C)
     D)
-    Answer:
+    Correct Answer:
 
     Notes:
     {notes_text[:3000]}
     """
 
-    payload = {
-        "inputs": prompt
-    }
-
-    response = requests.post(
-        API_URL,
-        headers=headers,
-        json=payload,
-        timeout=60
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.3
     )
 
-    return response.json()
+    return response.choices[0].message.content
 
 # ==========================
 # PAGE CONFIG
@@ -516,18 +516,21 @@ elif menu == "🧪 AI Test":
 
     st.title("AI Test")
 
-    st.write("HF_TOKEN exists:", "HF_TOKEN" in st.secrets)
+    st.write(
+        "Groq Key Exists:",
+        "GROQ_API_KEY" in st.secrets
+    )
 
     if st.button("Generate AI Questions"):
 
-        try:
+        with st.spinner("Generating MCQs..."):
 
             result = generate_mcqs_with_ai(
-                "Python has several built in data types such as int, float and string."
+                """
+                Python has several built in data types
+                including int, float, string,
+                list, tuple and dictionary.
+                """
             )
 
             st.write(result)
-
-        except Exception as e:
-
-            st.error(str(e))
