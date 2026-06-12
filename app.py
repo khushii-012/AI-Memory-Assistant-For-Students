@@ -8,6 +8,22 @@ import time
 from datetime import datetime
 from groq import Groq
 
+# ✅ SESSION STATE INITIALIZATION
+if "exam_active" not in st.session_state:
+    st.session_state.exam_active = False
+
+if "questions" not in st.session_state:
+    st.session_state.questions = []
+
+if "index" not in st.session_state:
+    st.session_state.index = 0
+
+if "answers" not in st.session_state:
+    st.session_state.answers = {}
+
+if "score" not in st.session_state:
+    st.session_state.score = 0
+
 # ==========================
 # CONFIG
 # ==========================
@@ -126,13 +142,10 @@ st.markdown("""
 # ==========================
 # SIDEBAR
 # ==========================
-menu = st.sidebar.radio("📌 Menu", [
-    "🏠 Home",
-    "📄 Upload Notes",
-    "🤖 Generate Exam",
-    "🧠 Exam Mode",
-    "🏆 Leaderboard"
-])
+menu = st.sidebar.selectbox(
+    "Choose Option",
+    ["🏠 Home", "🤖 Generate Exam", "📝 Take Exam", "📊 Result"]
+)
 
 # ==========================
 # HOME
@@ -194,13 +207,9 @@ elif menu == "📄 Upload Notes":
 # ==========================
 elif menu == "🤖 Generate Exam":
 
-    st.title("🤖 AI Exam Generator")
+    st.title("AI Exam Generator")
 
     db = pd.read_csv(notes_file)
-
-    if len(db) == 0:
-        st.warning("No notes available. Please upload notes first.")
-        st.stop()
 
     topic = st.selectbox("Topic", db["Topic"].unique())
     difficulty = st.selectbox("Difficulty", ["Easy", "Medium", "Hard"])
@@ -215,11 +224,8 @@ elif menu == "🤖 Generate Exam":
         st.session_state.score = 0
         st.session_state.exam_active = True
 
-        # Timer setup
-        st.session_state.start_time = time.time()
-        st.session_state.time_limit = 120  # 2 minutes exam
-
-        st.success("✅ Exam Ready! Start solving questions.")
+        st.success("Exam Ready!")
+        st.rerun()   
 # ==========================
 # EXAM MODE
 # ==========================
@@ -227,34 +233,50 @@ elif menu == "🧠 Exam Mode":
 
     st.title("🧠 Live Exam Mode")
 
-    q = st.session_state.questions
-
-    if not q:
-        st.warning("Generate exam first")
+    # ✅ SAFETY CHECK (VERY IMPORTANT)
+    if "questions" not in st.session_state or len(st.session_state.questions) == 0:
+        st.warning("⚠️ Generate exam first")
         st.stop()
 
+    q = st.session_state.questions
+
+    # ✅ INIT START TIME SAFETY
+    if "start_time" not in st.session_state:
+        st.warning("⚠️ Please generate exam first")
+        st.stop()
+
+    # =========================
     # TIMER
+    # =========================
     elapsed = time.time() - st.session_state.start_time
     remaining = st.session_state.time_limit - elapsed
 
     if remaining <= 0:
         st.error("⏰ Time Up! Auto Submitting...")
-
         st.session_state.exam_active = False
+        st.stop()
 
     st.progress(max(0, remaining / st.session_state.time_limit))
 
+    # =========================
+    # QUESTION DISPLAY
+    # =========================
     i = st.session_state.index
     question = q[i]
 
     st.subheader(f"Q{i+1}. {question['question']}")
 
-    choice = st.radio("Choose:", question["options"], key=i)
+    # IMPORTANT: unique key avoids radio reset bug
+    choice = st.radio("Choose:", question["options"], key=f"q_{i}")
 
+    # =========================
+    # BUTTONS
+    # =========================
     col1, col2 = st.columns(2)
 
     with col1:
         if st.button("⬅ Prev") and i > 0:
+            st.session_state.answers[i] = choice
             st.session_state.index -= 1
             st.rerun()
 
@@ -267,6 +289,7 @@ elif menu == "🧠 Exam Mode":
                 st.session_state.index += 1
             else:
                 st.session_state.exam_active = False
+                st.success("✅ Exam Finished!")
 
             st.rerun()
 
