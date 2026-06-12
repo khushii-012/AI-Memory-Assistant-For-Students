@@ -16,25 +16,30 @@ def generate_mcqs_with_ai(notes_text):
         api_key=st.secrets["GROQ_API_KEY"]
     )
 
-    prompt = f"""
-Generate exactly 5 multiple choice questions from these notes.
+   prompt = f"""
+Generate exactly 5 multiple choice questions from the notes.
 
-Return ONLY in this format:
+STRICT RULES:
+- Each question MUST be on separate lines
+- Each option MUST be on a new line
+- Do NOT write options in same line
+- Do NOT add extra explanation
 
-Q1:
-Question text
+FORMAT:
 
-A) option
-B) option
-C) option
-D) option
-
+Q1: Question text
+A) option 1
+B) option 2
+C) option 3
+D) option 4
 ANSWER: B
 
-Q2:
-...
-
-Do not provide explanations.
+Q2: Question text
+A) option 1
+B) option 2
+C) option 3
+D) option 4
+ANSWER: C
 
 Notes:
 {notes_text[:3000]}
