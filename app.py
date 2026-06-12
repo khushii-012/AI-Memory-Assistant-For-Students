@@ -228,7 +228,7 @@ elif menu == "🤖 Generate Quiz":
         )
 
         selected_note = notes_db[
-            notes_db["Topic"] == selected_topic
+        notes_db["Topic"] == selected_topic
         ]["Notes"].values[0]
 
         st.subheader("Generated MCQs")
