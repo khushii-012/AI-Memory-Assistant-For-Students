@@ -65,6 +65,7 @@ menu = st.sidebar.radio(
         "🏠 Home",
         "📚 Add Topic",
         "📄 Upload Notes",
+        "🤖 Generate Quiz",
         "📝 Take Quiz",
         "📊 Dashboard",
         "⚠ Topics At Risk",
@@ -204,6 +205,53 @@ if st.button("💾 Save Notes"):
 
         st.success("Notes Saved Successfully!") 
         st.write(notes_db.tail())
+
+# ==========================
+# 🤖 GENERATE QUIZ
+# ==========================
+
+elif menu == "🤖 Generate Quiz":
+
+    st.title("🤖 Generate Quiz From Notes")
+
+    notes_db = pd.read_csv(notes_file)
+
+    if len(notes_db) == 0:
+
+        st.warning("No notes available.")
+
+    else:
+
+        selected_topic = st.selectbox(
+            "Select Topic",
+            notes_db["Topic"]
+        )
+
+        selected_note = notes_db[
+            notes_db["Topic"] == selected_topic
+        ]["Notes"].values[0]
+
+        st.subheader("Generated Questions")
+
+        sentences = selected_note.split(".")
+
+        generated_questions = []
+
+        for sentence in sentences[:5]:
+
+            sentence = sentence.strip()
+
+            if len(sentence) > 20:
+
+                question = (
+                    "Explain: " + sentence[:80]
+                )
+
+                generated_questions.append(question)
+
+        for i, q in enumerate(generated_questions):
+
+            st.write(f"Q{i+1}. {q}")
 # ==========================
 # 📝 TAKE QUIZ (UPDATED - KPI TRACKING)
 # ==========================
