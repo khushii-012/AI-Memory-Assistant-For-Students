@@ -198,7 +198,11 @@ elif menu == "🤖 Generate Exam":
 
     db = pd.read_csv(notes_file)
 
-    topic = st.selectbox("Topic", db["Topic"])
+    if len(db) == 0:
+        st.warning("No notes available. Please upload notes first.")
+        st.stop()
+
+    topic = st.selectbox("Topic", db["Topic"].unique())
     difficulty = st.selectbox("Difficulty", ["Easy", "Medium", "Hard"])
 
     if st.button("Generate Exam"):
@@ -211,12 +215,11 @@ elif menu == "🤖 Generate Exam":
         st.session_state.score = 0
         st.session_state.exam_active = True
 
-        # Timer
+        # Timer setup
         st.session_state.start_time = time.time()
-        st.session_state.time_limit = 120  # 2 minutes
+        st.session_state.time_limit = 120  # 2 minutes exam
 
-        st.success("Exam Ready!")
-
+        st.success("✅ Exam Ready! Start solving questions.")
 # ==========================
 # EXAM MODE
 # ==========================
