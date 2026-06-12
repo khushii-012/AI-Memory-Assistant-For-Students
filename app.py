@@ -95,6 +95,10 @@ for k, v in defaults.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
+def go_home():
+    st.session_state.page = "home"
+    st.rerun()
+
 # ==========================
 # FILES
 # ==========================
@@ -235,6 +239,11 @@ def upload():
 
     st.title("📄 Upload Notes")
 
+    # 🔙 BACK BUTTON (IMPORTANT FIX)
+    if st.button("⬅ Back to Dashboard"):
+        st.session_state.page = "home"
+        st.rerun()
+
     file = st.file_uploader("Upload PDF", type=["pdf"])
 
     if file:
@@ -250,8 +259,8 @@ def upload():
             db = pd.read_csv(notes_file)
             db.loc[len(db)] = [topic, text]
             db.to_csv(notes_file, index=False)
-            st.success("Saved!")
 
+            st.success("Saved!")
 # ==========================
 # GENERATE EXAM
 # ==========================
