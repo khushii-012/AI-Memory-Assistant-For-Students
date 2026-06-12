@@ -173,50 +173,46 @@ def home():
 
     st.markdown("---")
 
-   # TOP STATS SECTION
-col1, col2, col3 = st.columns(3)
+    # TOP STATS SECTION
+    col1, col2, col3 = st.columns(3)
 
-with col1:
-    st.markdown("""
-    <div class="feature-card">
-        <h3>📄 Notes Engine</h3>
-        <p>Upload PDF & convert into AI-ready knowledge</p>
-    </div>
-    """, unsafe_allow_html=True)
+    with col1:
+        st.markdown("""
+        <div class="feature-card">
+            <h3>📄 Notes Engine</h3>
+            <p>Upload PDF & convert into AI-ready knowledge</p>
+        </div>
+        """, unsafe_allow_html=True)
 
-    if st.button("Open Notes"):
-        st.session_state.page = "upload"
+        if st.button("Open Notes"):
+            st.session_state.page = "upload"
 
+    with col2:
+        st.markdown("""
+        <div class="feature-card">
+            <h3>🤖 AI Exam Generator</h3>
+            <p>Auto-generate MCQs using LLM intelligence</p>
+        </div>
+        """, unsafe_allow_html=True)
 
-with col2:
-    st.markdown("""
-    <div class="feature-card">
-        <h3>🤖 AI Exam Generator</h3>
-        <p>Auto-generate MCQs using LLM intelligence</p>
-    </div>
-    """, unsafe_allow_html=True)
+        if st.button("Generate Exam"):
+            st.session_state.page = "generate"
 
-    if st.button("Generate Exam"):
-        st.session_state.page = "generate"
+    with col3:
+        st.markdown("""
+        <div class="feature-card">
+            <h3>🧠 Live Exam Mode</h3>
+            <p>Timed exam with smart navigation system</p>
+        </div>
+        """, unsafe_allow_html=True)
 
+        if st.button("Start Exam"):
+            if st.session_state.questions:
+                st.session_state.page = "exam"
+            else:
+                st.warning("Please generate exam first")
 
-with col3:
-    st.markdown("""
-    <div class="feature-card">
-        <h3>🧠 Live Exam Mode</h3>
-        <p>Timed exam with smart navigation system</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-   
-    if st.button("Start Exam"):
-        if st.session_state.questions:
-            st.session_state.page = "exam"
-        else:
-            st.warning("Please generate exam first")
-
-
-st.markdown("---")
+    st.markdown("---")
 
     # SECOND ROW
     col4, col5 = st.columns(2)
