@@ -268,7 +268,7 @@ for i, mcq in enumerate(generated_mcqs):
         key=f"mcq_{i}"
     )
 
-    if selected == mcq["answer"]:
+ if selected == mcq["answer"]:
         st.success("Correct")
     else:
         st.error("Incorrect")
