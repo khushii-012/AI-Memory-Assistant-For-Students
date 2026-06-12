@@ -202,7 +202,8 @@ if st.button("💾 Save Notes"):
             index=False
         )
 
-        st.success("Notes Saved Successfully!")    
+        st.success("Notes Saved Successfully!") 
+        st.write(notes_db.tail())
 # ==========================
 # 📝 TAKE QUIZ (UPDATED - KPI TRACKING)
 # ==========================
