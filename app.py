@@ -52,6 +52,7 @@ menu = st.sidebar.radio(
     [
         "🏠 Home",
         "📚 Add Topic",
+        "📄 Upload Notes",
         "📝 Take Quiz",
         "📊 Dashboard",
         "⚠ Topics At Risk",
