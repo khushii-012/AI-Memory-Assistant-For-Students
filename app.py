@@ -289,7 +289,7 @@ elif menu == "🤖 Generate Quiz":
 
         st.subheader("AI Generated Quiz")
 
- if st.button("Generate AI Quiz"):
+if st.button("Generate AI Quiz"):
 
     with st.spinner("Generating questions..."):
 
