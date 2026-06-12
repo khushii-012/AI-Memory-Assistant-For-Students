@@ -233,7 +233,21 @@ elif menu == "🤖 Generate Quiz":
 
         st.subheader("Generated MCQs")
 
-        sentences = selected_note.split(".")
+       sentences = selected_note.split(".")
+
+filtered_sentences = []
+
+for sentence in sentences:
+
+    sentence = sentence.strip()
+
+    if (
+        len(sentence) > 50
+        and not sentence.isupper()
+        and "page" not in sentence.lower()
+        and "chapter" not in sentence.lower()
+    ):
+        filtered_sentences.append(sentence)
 
         generated_mcqs = []
 
