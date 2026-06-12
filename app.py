@@ -15,7 +15,7 @@ def generate_mcqs_with_ai(notes_text):
         api_key=st.secrets["GROQ_API_KEY"]
     )
 
-   prompt = f"""
+ prompt = f"""
 You are an expert question generator.
 
 Generate EXACTLY 5 multiple-choice questions.
