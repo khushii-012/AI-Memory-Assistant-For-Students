@@ -52,6 +52,14 @@ Notes:
 
     return response.choices[0].message.content
 
+def parse_mcqs(raw_output):
+    try:
+        data = json.loads(raw_output)
+        return data["questions"]
+    except:
+        return []
+    
+
 # ==========================
 # PAGE CONFIG
 # ==========================
@@ -281,17 +289,39 @@ elif menu == "🤖 Generate Quiz":
 
         st.subheader("AI Generated Quiz")
 
-        if st.button("Generate AI Quiz"):
-            
-            with st.spinner("Generating questions..."):
+       if st.button("Generate AI Quiz"):
 
-                result = generate_mcqs_with_ai(selected_note)
+    with st.spinner("Generating questions..."):
 
-                st.text_area(
-                    "Generated Quiz",
-                    result,
-                    height=500
+        result = generate_mcqs_with_ai(selected_note)
+        questions = parse_mcqs(result)
+
+        if not questions:
+            st.error("Failed to generate quiz. Try again.")
+        else:
+            score = 0
+
+            for idx, q in enumerate(questions):
+
+                st.subheader(q["question"])
+
+                user_choice = st.radio(
+                    "Choose answer:",
+                    q["options"],
+                    key=f"q_{idx}"
                 )
+
+                correct_index = ["A", "B", "C", "D"].index(q["answer"])
+                correct_answer = q["options"][correct_index]
+
+                if user_choice == correct_answer:
+                    st.success("Correct ✅")
+                    score += 1
+                else:
+                    st.error(f"Wrong ❌ Correct: {correct_answer}")
+
+            st.markdown("---")
+            st.subheader(f"Final Score: {score} / 5")
        
 # ==========================
 # 📝 TAKE QUIZ (UPDATED - KPI TRACKING)
