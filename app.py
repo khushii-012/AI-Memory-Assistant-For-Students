@@ -17,29 +17,27 @@ def generate_mcqs_with_ai(notes_text):
     )
 
     prompt = f"""
-Generate exactly 5 multiple choice questions from the notes.
+You are an expert question generator.
 
-STRICT RULES:
-- Each question MUST be on separate lines
-- Each option MUST be on a new line
-- Do NOT write options in same line
-- Do NOT add extra explanation
+Generate EXACTLY 5 multiple-choice questions.
 
-FORMAT:
+Return ONLY valid JSON in this format:
 
-Q1: Question text
-A) option 1
-B) option 2
-C) option 3
-D) option 4
-ANSWER: B
+{
+  "questions": [
+    {
+      "question": "Question text here",
+      "options": ["A option", "B option", "C option", "D option"],
+      "answer": "A"
+    }
+  ]
+}
 
-Q2: Question text
-A) option 1
-B) option 2
-C) option 3
-D) option 4
-ANSWER: C
+RULES:
+- Exactly 5 questions
+- options must be a list of 4 items
+- answer must be A, B, C, or D only
+- NO extra text, NO explanation, NO markdown
 
 Notes:
 {notes_text[:3000]}
@@ -47,13 +45,9 @@ Notes:
 
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
-        messages=[
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        temperature=0.3
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.2,
+        top_p=0.9
     )
 
     return response.choices[0].message.content
