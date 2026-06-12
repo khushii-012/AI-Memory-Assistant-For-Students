@@ -16,37 +16,25 @@ def generate_mcqs_with_ai(notes_text):
         api_key=st.secrets["GROQ_API_KEY"]
     )
 
-    prompt = f"""
-You are an exam question generator.
+   prompt = f"""
+Generate exactly 5 multiple choice questions from these notes.
 
-Generate exactly 5 MCQs from the notes.
-
-Rules:
-1. Do NOT show answers immediately.
-2. Do NOT provide explanations.
-3. Each question must have 4 options.
-4. Only one option should be correct.
-5. Put the correct answer at the very end under a separate section called ANSWER KEY.
-
-Format:
+Return ONLY in this format:
 
 Q1:
 Question text
 
-A)
-B)
-C)
-D)
+A) option
+B) option
+C) option
+D) option
+
+ANSWER: B
 
 Q2:
 ...
 
-ANSWER KEY:
-Q1 - B
-Q2 - A
-Q3 - D
-Q4 - C
-Q5 - B
+Do not provide explanations.
 
 Notes:
 {notes_text[:3000]}
@@ -292,55 +280,20 @@ elif menu == "🤖 Generate Quiz":
             notes_db["Topic"] == selected_topic
         ]["Notes"].values[0]
 
-        st.subheader("Generated MCQs")
+   st.subheader("AI Generated Quiz")
 
-        sentences = selected_note.split(".")
+   if st.button("Generate AI Quiz"):
 
-        filtered_sentences = []
+     with st.spinner("Generating questions..."):
 
-        for sentence in sentences:
+        result = generate_mcqs_with_ai(selected_note)
 
-            sentence = sentence.strip()
-
-            if (
-                len(sentence) > 50
-                and not sentence.isupper()
-                and "page" not in sentence.lower()
-                and "chapter" not in sentence.lower()
-            ):
-                filtered_sentences.append(sentence)
-
-        generated_mcqs = []
-
-        for sentence in filtered_sentences[:5]:
-
-            mcq = {
-                "question": "Which statement appears in your notes?",
-                "options": [
-                    sentence,
-                    "None of the above",
-                    "Random Concept A",
-                    "Random Concept B"
-                ],
-                "answer": sentence
-            }
-
-            generated_mcqs.append(mcq)
-
-        for i, mcq in enumerate(generated_mcqs):
-
-            st.subheader(f"Q{i+1}")
-
-            selected = st.radio(
-                mcq["question"],
-                mcq["options"],
-                key=f"mcq_{i}"
-            )
-
-            if selected == mcq["answer"]:
-                st.success("Correct")
-            else:
-                st.error("Incorrect")
+        st.text_area(
+            "Generated Quiz",
+            result,
+            height=500
+        )
+       
 # ==========================
 # 📝 TAKE QUIZ (UPDATED - KPI TRACKING)
 # ==========================
@@ -553,4 +506,5 @@ elif menu == "🧪 AI Test":
                 """
             )
 
-            st.write(result)
+            quiz_only = result.split("ANSWER:")[0]
+            st.write(quiz_only)
