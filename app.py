@@ -8,50 +8,59 @@ from datetime import datetime
 from groq import Groq
 
 # ==========================
-# PAGE CONFIG (HackerRank STYLE)
+# PAGE CONFIG
 # ==========================
-st.set_page_config(
-    page_title="NeuroLearn AI",
-    page_icon="🧠",
-    layout="wide"
-)
+st.set_page_config(page_title="NeuroLearn AI", page_icon="🧠", layout="wide")
 
 st.markdown("""
 <style>
     body { background-color: #0f1117; color: white; }
     .main { background-color: #0f1117; }
+
     h1, h2, h3 { color: #00ffcc; text-align: center; }
 
-    .stButton>button {
-        background-color: #00ffcc;
-        color: black;
-        border-radius: 10px;
-        height: 3em;
-        width: 100%;
-        font-weight: bold;
+    /* FEATURE CARDS */
+    .card {
+        background-color: #1a1d24;
+        padding: 20px;
+        border-radius: 15px;
+        text-align: center;
+        cursor: pointer;
+        transition: 0.3s;
+        box-shadow: 0px 0px 10px rgba(0,255,204,0.2);
     }
 
-    .card {
-        padding: 20px;
-        background-color: #1a1d24;
-        border-radius: 12px;
-        margin-bottom: 10px;
+    .card:hover {
+        transform: scale(1.05);
+        box-shadow: 0px 0px 20px rgba(0,255,204,0.5);
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+    }
+
+    .btn {
+        background-color: #00ffcc;
+        padding: 10px;
+        border-radius: 10px;
+        color: black;
+        font-weight: bold;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # ==========================
-# SESSION STATE INIT (SAFE)
+# SESSION STATE
 # ==========================
 defaults = {
+    "page": "home",
     "questions": [],
     "index": 0,
     "answers": {},
-    "exam_active": False,
     "start_time": None,
-    "time_limit": 120,
-    "score": 0,
-    "feedback": ""
+    "time_limit": 120
 }
 
 for k, v in defaults.items():
@@ -82,7 +91,7 @@ Generate 5 MCQs.
 
 Difficulty: {difficulty}
 
-Return ONLY JSON:
+Return JSON:
 {{
  "questions": [
   {{
@@ -110,30 +119,45 @@ Notes:
         return []
 
 # ==========================
-# SIDEBAR
+# HOME PAGE (MODERN DASHBOARD)
 # ==========================
-menu = st.sidebar.selectbox(
-    "Menu",
-    ["🏠 Home", "📄 Upload Notes", "🤖 Generate Exam", "🧠 Exam Mode", "📊 Result", "🏆 Leaderboard"]
-)
+def home():
+
+    st.title("🧠 NeuroLearn AI Dashboard")
+
+    st.markdown("### 🚀 Choose what you want to do")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        if st.button("📄 Upload Notes"):
+            st.session_state.page = "upload"
+
+    with col2:
+        if st.button("🤖 Generate Exam"):
+            st.session_state.page = "generate"
+
+    with col3:
+        if st.button("🧠 Take Exam"):
+            st.session_state.page = "exam"
+
+    col4, col5, col6 = st.columns(3)
+
+    with col4:
+        if st.button("📊 Results"):
+            st.session_state.page = "result"
+
+    with col5:
+        if st.button("🏆 Leaderboard"):
+            st.session_state.page = "leaderboard"
+
+    with col6:
+        st.info("🔥 AI Powered Learning System")
 
 # ==========================
-# HOME
+# UPLOAD
 # ==========================
-if menu == "🏠 Home":
-
-    st.title("🧠 NeuroLearn AI")
-
-    st.markdown("""
-    <div class='card'>
-    🚀 Upload Notes → AI generates exam → You take test → Get AI feedback + rank
-    </div>
-    """, unsafe_allow_html=True)
-
-# ==========================
-# UPLOAD NOTES
-# ==========================
-elif menu == "📄 Upload Notes":
+def upload():
 
     st.title("📄 Upload Notes")
 
@@ -146,11 +170,9 @@ elif menu == "📄 Upload Notes":
         for p in pdf.pages:
             text += p.extract_text() or ""
 
-        st.text_area("Preview", text[:2000])
-
         topic = st.text_input("Topic")
 
-        if st.button("Save Notes") and topic:
+        if st.button("Save") and topic:
             db = pd.read_csv(notes_file)
             db.loc[len(db)] = [topic, text]
             db.to_csv(notes_file, index=False)
@@ -159,68 +181,54 @@ elif menu == "📄 Upload Notes":
 # ==========================
 # GENERATE EXAM
 # ==========================
-elif menu == "🤖 Generate Exam":
+def generate():
 
-    st.title("🤖 AI Exam Generator")
+    st.title("🤖 Generate Exam")
 
     db = pd.read_csv(notes_file)
 
     if len(db) == 0:
         st.warning("Upload notes first")
-        st.stop()
+        return
 
     topic = st.selectbox("Topic", db["Topic"].unique())
-    difficulty = st.selectbox("Difficulty", ["Easy", "Medium", "Hard"])
+    difficulty = st.selectbox("Difficulty", ["Easy","Medium","Hard"])
 
-    if st.button("Generate Exam"):
+    if st.button("Generate"):
 
         notes = db[db["Topic"] == topic]["Notes"].values[0]
 
         st.session_state.questions = generate_mcqs(notes, difficulty)
         st.session_state.index = 0
         st.session_state.answers = {}
-        st.session_state.exam_active = True
         st.session_state.start_time = time.time()
 
-        st.success("Exam Generated!")
-        st.rerun()
+        st.success("Exam Ready!")
 
 # ==========================
 # EXAM MODE
 # ==========================
-elif menu == "🧠 Exam Mode":
+def exam():
 
-    st.title("🧠 Live Exam Mode")
-
-    if len(st.session_state.questions) == 0:
-        st.warning("Generate exam first")
-        st.stop()
+    st.title("🧠 Exam Mode")
 
     q = st.session_state.questions
+
+    if not q:
+        st.warning("Generate exam first")
+        return
+
     i = st.session_state.index
-
-    # TIMER
-    elapsed = time.time() - st.session_state.start_time
-    remaining = st.session_state.time_limit - elapsed
-
-    if remaining <= 0:
-        st.error("⏰ Time Up!")
-        st.session_state.exam_active = False
-        st.stop()
-
-    st.progress(remaining / st.session_state.time_limit)
-
     question = q[i]
 
-    st.markdown(f"### Q{i+1}. {question['question']}")
+    st.write(f"Q{i+1}. {question['question']}")
 
-    choice = st.radio("Choose:", question["options"], key=f"q_{i}")
+    choice = st.radio("Answer:", question["options"], key=i)
 
     col1, col2 = st.columns(2)
 
     with col1:
         if st.button("⬅ Prev") and i > 0:
-            st.session_state.answers[i] = choice
             st.session_state.index -= 1
             st.rerun()
 
@@ -229,85 +237,67 @@ elif menu == "🧠 Exam Mode":
 
             st.session_state.answers[i] = choice
 
-            if i < len(q) - 1:
+            if i < len(q)-1:
                 st.session_state.index += 1
-            else:
-                st.session_state.exam_active = False
-                st.success("Exam Completed!")
 
             st.rerun()
 
 # ==========================
-# RESULT + AI FEEDBACK + RANK
+# RESULT
 # ==========================
-elif menu == "📊 Result":
+def result():
 
-    if not st.session_state.questions:
-        st.warning("No exam found")
-        st.stop()
+    st.title("📊 Results")
 
     q = st.session_state.questions
     ans = st.session_state.answers
 
+    if not q:
+        st.warning("No exam found")
+        return
+
     score = 0
-    wrong = []
 
     for i, item in enumerate(q):
-
-        correct = item["answer"]
-        selected = ans.get(i)
-
-        if selected == correct:
+        if ans.get(i) == item["answer"]:
             score += 1
-        else:
-            wrong.append(item)
 
     st.success(f"Score: {score}/{len(q)}")
 
-    # ================= BADGE SYSTEM =================
     if score >= 4:
-        badge = "🏆 Genius"
+        st.info("🏆 Badge: Genius")
     elif score >= 3:
-        badge = "🥈 Smart"
+        st.info("🥈 Badge: Smart")
     else:
-        badge = "📘 Learner"
-
-    st.info(f"Your Badge: {badge}")
-
-    # ================= AI FEEDBACK =================
-    if wrong:
-
-        st.subheader("📉 AI Feedback")
-
-        for w in wrong:
-            st.warning(f"{w['question']}")
-            st.info(f"Explanation: {w.get('explanation','No explanation')}")
-
-    # ================= SAVE LEADERBOARD =================
-    name = st.text_input("Enter Name")
-
-    if st.button("Save Result") and name:
-
-        lb = pd.read_csv(leaderboard_file)
-
-        lb.loc[len(lb)] = [
-            name,
-            score,
-            badge,
-            datetime.now().strftime("%Y-%m-%d")
-        ]
-
-        lb.to_csv(leaderboard_file, index=False)
-
-        st.success("Saved!")
+        st.info("📘 Badge: Learner")
 
 # ==========================
 # LEADERBOARD
 # ==========================
-elif menu == "🏆 Leaderboard":
+def leaderboard():
 
     st.title("🏆 Leaderboard")
 
     lb = pd.read_csv(leaderboard_file)
+    st.dataframe(lb)
 
-    st.dataframe(lb.sort_values(by="Score", ascending=False))
+# ==========================
+# ROUTER
+# ==========================
+if st.session_state.page == "home":
+    home()
+
+elif st.session_state.page == "upload":
+    upload()
+
+elif st.session_state.page == "generate":
+    generate()
+
+elif st.session_state.page == "exam":
+    exam()
+
+elif st.session_state.page == "result":
+    result()
+
+elif st.session_state.page == "leaderboard":
+    leaderboard()
