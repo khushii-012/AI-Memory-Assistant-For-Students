@@ -20,6 +20,7 @@ st.set_page_config(
 # ==========================
 memory_file = "student_memory.csv"
 quiz_file = "quiz_bank.csv"
+notes_file = "notes_database.csv"
 
 # ==========================
 # SESSION STATE (NEW - KPI SUPPORT)
@@ -45,6 +46,16 @@ if not os.path.exists(memory_file):
 
     memory_db.to_csv(memory_file, index=False)
 
+if not os.path.exists(notes_file):
+
+    notes_db = pd.DataFrame(
+        columns=["Topic", "Notes"]
+    )
+
+    notes_db.to_csv(
+        notes_file,
+        index=False
+    )
 # ==========================
 # SIDEBAR
 # ==========================
