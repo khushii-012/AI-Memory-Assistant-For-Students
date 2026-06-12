@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import os
 from datetime import datetime
 import numpy as np
-import requests
 import json
 from groq import Groq
 
@@ -21,23 +20,22 @@ You are an expert question generator.
 
 Generate EXACTLY 5 multiple-choice questions.
 
-Return ONLY valid JSON in this format:
+Return ONLY valid JSON:
 
 {
   "questions": [
     {
-      "question": "Question text here",
-      "options": ["A option", "B option", "C option", "D option"],
+      "question": "Question text",
+      "options": ["A", "B", "C", "D"],
       "answer": "A"
     }
   ]
 }
 
-RULES:
+Rules:
 - Exactly 5 questions
-- options must be a list of 4 items
-- answer must be A, B, C, or D only
-- NO extra text, NO explanation, NO markdown
+- answer must be A/B/C/D only
+- no extra text
 
 Notes:
 {notes_text[:3000]}
@@ -46,19 +44,17 @@ Notes:
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
-        temperature=0.2,
-        top_p=0.9
+        temperature=0.2
     )
 
     return response.choices[0].message.content
-
+    
 def parse_mcqs(raw_output):
     try:
         data = json.loads(raw_output)
         return data["questions"]
     except:
         return []
-    
 
 # ==========================
 # PAGE CONFIG
@@ -273,7 +269,6 @@ elif menu == "🤖 Generate Quiz":
     notes_db = pd.read_csv(notes_file)
 
     if len(notes_db) == 0:
-
         st.warning("No notes available.")
 
     else:
@@ -287,41 +282,40 @@ elif menu == "🤖 Generate Quiz":
             notes_db["Topic"] == selected_topic
         ]["Notes"].values[0]
 
-        st.subheader("AI Generated Quiz")
+        if st.button("Generate AI Quiz"):
 
-if st.button("Generate AI Quiz"):
+            with st.spinner("Generating questions..."):
 
-    with st.spinner("Generating questions..."):
+                result = generate_mcqs_with_ai(selected_note)
+                questions = parse_mcqs(result)
 
-        result = generate_mcqs_with_ai(selected_note)
-        questions = parse_mcqs(result)
-
-        if not questions:
-            st.error("Failed to generate quiz. Try again.")
-        else:
-            score = 0
-
-            for idx, q in enumerate(questions):
-
-                st.subheader(q["question"])
-
-                user_choice = st.radio(
-                    "Choose answer:",
-                    q["options"],
-                    key=f"q_{idx}"
-                )
-
-                correct_index = ["A", "B", "C", "D"].index(q["answer"])
-                correct_answer = q["options"][correct_index]
-
-                if user_choice == correct_answer:
-                    st.success("Correct ✅")
-                    score += 1
+                if not questions:
+                    st.error("Failed to generate quiz. Try again.")
                 else:
-                    st.error(f"Wrong ❌ Correct: {correct_answer}")
 
-            st.markdown("---")
-            st.subheader(f"Final Score: {score} / 5")
+                    score = 0
+
+                    for idx, q in enumerate(questions):
+
+                        st.subheader(q["question"])
+
+                        user_choice = st.radio(
+                            "Choose answer:",
+                            q["options"],
+                            key=f"q_{idx}"
+                        )
+
+                        correct_index = ["A", "B", "C", "D"].index(q["answer"])
+                        correct_answer = q["options"][correct_index]
+
+                        if user_choice == correct_answer:
+                            st.success("Correct ✅")
+                            score += 1
+                        else:
+                            st.error(f"Wrong ❌ Correct: {correct_answer}")
+
+                    st.markdown("---")
+                    st.subheader(f"Final Score: {score} / 5")
        
 # ==========================
 # 📝 TAKE QUIZ (UPDATED - KPI TRACKING)
