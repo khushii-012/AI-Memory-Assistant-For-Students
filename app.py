@@ -1,11 +1,9 @@
 from PyPDF2 import PdfReader
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 import os
-from datetime import datetime
-import numpy as np
 import json
+from datetime import datetime
 from groq import Groq
 
 # ==========================
@@ -13,26 +11,28 @@ from groq import Groq
 # ==========================
 st.set_page_config(page_title="AI Memory Assistant", page_icon="🧠", layout="wide")
 
-memory_file = "student_memory.csv"
+# ==========================
+# FILES
+# ==========================
 notes_file = "notes_database.csv"
 
+if not os.path.exists(notes_file):
+    pd.DataFrame(columns=["Topic", "Notes"]).to_csv(notes_file, index=False)
+
 # ==========================
-# INIT SESSION STATE
+# SESSION STATE INIT
 # ==========================
-if "exam_started" not in st.session_state:
-    st.session_state.exam_started = False
+if "exam_questions" not in st.session_state:
+    st.session_state.exam_questions = []
 
 if "exam_index" not in st.session_state:
     st.session_state.exam_index = 0
 
-if "exam_questions" not in st.session_state:
-    st.session_state.exam_questions = []
-
 if "exam_answers" not in st.session_state:
     st.session_state.exam_answers = {}
 
-if "quiz_scores" not in st.session_state:
-    st.session_state.quiz_scores = []
+if "exam_finished" not in st.session_state:
+    st.session_state.exam_finished = False
 
 # ==========================
 # AI QUIZ GENERATOR
@@ -44,7 +44,7 @@ def generate_mcqs_with_ai(notes_text):
     prompt = f"""
 You are an expert teacher.
 
-Generate EXACTLY 5 multiple choice questions.
+Generate EXACTLY 5 multiple-choice questions.
 
 Return ONLY valid JSON:
 
@@ -59,8 +59,8 @@ Return ONLY valid JSON:
 }}
 
 Rules:
-- Exactly 5 questions
-- answer must be A/B/C/D only
+- exactly 5 questions
+- answer must be A/B/C/D
 - no explanation
 
 Notes:
@@ -97,14 +97,15 @@ menu = st.sidebar.radio("Navigation", [
 # ==========================
 if menu == "🏠 Home":
     st.title("🧠 AI Memory Assistant")
-    st.info("Google-Forms Style Exam Mode + AI Quiz System")
+    st.markdown("### AI Powered Learning + Exam System")
+    st.info("Upload notes → Generate quiz → Take exam mode like Google Forms")
 
 # ==========================
 # UPLOAD NOTES
 # ==========================
 elif menu == "📄 Upload Notes":
 
-    st.title("📄 Upload Notes")
+    st.title("📄 Upload Notes (PDF)")
 
     uploaded_file = st.file_uploader("Upload PDF", type=["pdf"])
 
@@ -116,7 +117,7 @@ elif menu == "📄 Upload Notes":
         for page in pdf.pages:
             extracted_text += page.extract_text() or ""
 
-        st.success("PDF Extracted!")
+        st.success("PDF Extracted")
 
         st.text_area("Preview", extracted_text[:3000], height=200)
 
@@ -124,37 +125,48 @@ elif menu == "📄 Upload Notes":
 
         if st.button("Save Notes") and topic:
 
-            db = pd.read_csv(notes_file) if os.path.exists(notes_file) else pd.DataFrame(columns=["Topic", "Notes"])
+            db = pd.read_csv(notes_file)
 
-            db.loc[len(db)] = [topic, extracted_text]
+            new_row = {
+                "Topic": topic,
+                "Notes": extracted_text
+            }
+
+            db.loc[len(db)] = new_row
             db.to_csv(notes_file, index=False)
 
-            st.success("Saved!")
+            st.success("Saved Successfully")
 
 # ==========================
 # GENERATE QUIZ
 # ==========================
 elif menu == "🤖 Generate Quiz":
 
-    st.title("🤖 Generate Quiz")
+    st.title("🤖 AI Quiz Generator")
 
-    if os.path.exists(notes_file):
-        db = pd.read_csv(notes_file)
+    db = pd.read_csv(notes_file)
+
+    if len(db) == 0:
+        st.warning("No notes found")
+    else:
 
         topic = st.selectbox("Select Topic", db["Topic"])
         notes_text = db[db["Topic"] == topic]["Notes"].values[0]
 
-        if st.button("Generate Quiz Cards"):
+        if st.button("Generate Quiz"):
 
             raw = generate_mcqs_with_ai(notes_text)
             questions = parse_mcqs(raw)
 
-            st.session_state.exam_questions = questions
-            st.session_state.exam_index = 0
-            st.session_state.exam_answers = {}
-            st.session_state.exam_started = True
+            if not questions:
+                st.error("AI failed to generate quiz")
+            else:
+                st.session_state.exam_questions = questions
+                st.session_state.exam_index = 0
+                st.session_state.exam_answers = {}
+                st.session_state.exam_finished = False
 
-            st.success("Quiz Ready! Go to Exam Mode")
+                st.success("Quiz Generated! Go to Exam Mode")
 
 # ==========================
 # EXAM MODE (GOOGLE FORM STYLE)
@@ -166,21 +178,21 @@ elif menu == "🧠 Exam Mode":
     questions = st.session_state.exam_questions
 
     if not questions:
-        st.warning("Generate quiz first!")
+        st.warning("Please generate quiz first")
         st.stop()
 
     idx = st.session_state.exam_index
     q = questions[idx]
 
-    progress = (idx + 1) / len(questions)
-    st.progress(progress)
+    # progress bar
+    st.progress((idx + 1) / len(questions))
 
     st.markdown(f"### Question {idx+1} / {len(questions)}")
     st.subheader(q["question"])
 
-    choice = st.radio("Select answer:", q["options"], key=idx)
+    choice = st.radio("Select answer:", q["options"], key=f"q_{idx}")
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
 
     with col1:
         if st.button("⬅ Previous") and idx > 0:
@@ -199,15 +211,12 @@ elif menu == "🧠 Exam Mode":
                 st.session_state.exam_finished = True
                 st.rerun()
 
-    with col3:
-        st.write("")
-
 # ==========================
 # RESULT PAGE
 # ==========================
 if st.session_state.get("exam_finished", False):
 
-    st.title("🎯 Exam Result")
+    st.title("🎯 Final Result")
 
     questions = st.session_state.exam_questions
     answers = st.session_state.exam_answers
@@ -222,7 +231,7 @@ if st.session_state.get("exam_finished", False):
         if answers.get(i) == correct:
             score += 1
 
-    st.success(f"Final Score: {score} / {len(questions)}")
+    st.success(f"Your Score: {score} / {len(questions)}")
 
     if st.button("Restart Exam"):
         st.session_state.clear()
