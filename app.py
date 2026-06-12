@@ -138,7 +138,31 @@ menu = st.sidebar.radio("📌 Menu", [
 # HOME
 # ==========================
 if menu == "🏠 Home":
-    st.success("Welcome! Make learning addictive 🎯")
+
+    st.markdown("""
+    # 🧠 NeuroLearn AI
+
+    ### 🚀 Learn Smarter. Not Harder.
+
+    Turn your notes into:
+    - 🧪 AI Exams  
+    - 📊 Progress Tracking  
+    - 🏆 Leaderboards  
+
+    ---
+    """)
+
+    # PRODUCT CARDS
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.info("🧠 AI Quiz Generator")
+
+    with col2:
+        st.success("⏱️ Timed Exams")
+
+    with col3:
+        st.warning("🏆 Leaderboard System")
 
 # ==========================
 # UPLOAD NOTES
