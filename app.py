@@ -228,56 +228,50 @@ elif menu == "🤖 Generate Quiz":
         )
 
         selected_note = notes_db[
-        notes_db["Topic"] == selected_topic
+            notes_db["Topic"] == selected_topic
         ]["Notes"].values[0]
 
         st.subheader("Generated MCQs")
 
-       sentences = selected_note.split(".")
+        sentences = selected_note.split(".")
 
-filtered_sentences = []
+        filtered_sentences = []
 
-for sentence in sentences:
-
-    sentence = sentence.strip()
-
-    if (
-        len(sentence) > 50
-        and not sentence.isupper()
-        and "page" not in sentence.lower()
-        and "chapter" not in sentence.lower()
-    ):
-        filtered_sentences.append(sentence)
-
-        generated_mcqs = []
-
-        for sentence in sentences[:5]:
+        for sentence in sentences:
 
             sentence = sentence.strip()
 
-            if len(sentence) > 30:
+            if (
+                len(sentence) > 50
+                and not sentence.isupper()
+                and "page" not in sentence.lower()
+                and "chapter" not in sentence.lower()
+            ):
+                filtered_sentences.append(sentence)
 
-                mcq = {
-                    "question": "Which statement appears in your notes?",
-                    "options": [
-                        sentence,
-                        "None of the above",
-                        "Random Concept A",
-                        "Random Concept B"
-                    ],
-                    "answer": sentence
-                }
+        generated_mcqs = []
 
-                generated_mcqs.append(mcq)
+        for sentence in filtered_sentences[:5]:
+
+            mcq = {
+                "question": "Which statement appears in your notes?",
+                "options": [
+                    sentence,
+                    "None of the above",
+                    "Random Concept A",
+                    "Random Concept B"
+                ],
+                "answer": sentence
+            }
+
+            generated_mcqs.append(mcq)
 
         for i, mcq in enumerate(generated_mcqs):
 
             st.subheader(f"Q{i+1}")
 
-            st.write(mcq["question"])
-
             selected = st.radio(
-                "Choose Answer",
+                mcq["question"],
                 mcq["options"],
                 key=f"mcq_{i}"
             )
