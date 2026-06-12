@@ -8,21 +8,50 @@ from datetime import datetime
 from groq import Groq
 
 # ==========================
-# CONFIG
+# PAGE CONFIG (HackerRank STYLE)
 # ==========================
-st.set_page_config(page_title="NeuroLearn AI", page_icon="🧠", layout="wide")
+st.set_page_config(
+    page_title="NeuroLearn AI",
+    page_icon="🧠",
+    layout="wide"
+)
+
+st.markdown("""
+<style>
+    body { background-color: #0f1117; color: white; }
+    .main { background-color: #0f1117; }
+    h1, h2, h3 { color: #00ffcc; text-align: center; }
+
+    .stButton>button {
+        background-color: #00ffcc;
+        color: black;
+        border-radius: 10px;
+        height: 3em;
+        width: 100%;
+        font-weight: bold;
+    }
+
+    .card {
+        padding: 20px;
+        background-color: #1a1d24;
+        border-radius: 12px;
+        margin-bottom: 10px;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # ==========================
-# SESSION STATE INIT (FIXED)
+# SESSION STATE INIT (SAFE)
 # ==========================
 defaults = {
-    "exam_active": False,
     "questions": [],
     "index": 0,
     "answers": {},
-    "score": 0,
+    "exam_active": False,
     "start_time": None,
     "time_limit": 120,
+    "score": 0,
+    "feedback": ""
 }
 
 for k, v in defaults.items():
@@ -39,10 +68,10 @@ if not os.path.exists(notes_file):
     pd.DataFrame(columns=["Topic", "Notes"]).to_csv(notes_file, index=False)
 
 if not os.path.exists(leaderboard_file):
-    pd.DataFrame(columns=["Name", "Score", "Difficulty", "Topic", "Date"]).to_csv(leaderboard_file, index=False)
+    pd.DataFrame(columns=["Name", "Score", "Badge", "Date"]).to_csv(leaderboard_file, index=False)
 
 # ==========================
-# AI MCQ GENERATOR
+# AI ENGINE
 # ==========================
 def generate_mcqs(notes, difficulty):
 
@@ -59,7 +88,8 @@ Return ONLY JSON:
   {{
    "question": "...",
    "options": ["A","B","C","D"],
-   "answer": "A"
+   "answer": "A",
+   "explanation": "short explanation"
   }}
  ]
 }}
@@ -80,7 +110,7 @@ Notes:
         return []
 
 # ==========================
-# SIDEBAR MENU (FIXED)
+# SIDEBAR
 # ==========================
 menu = st.sidebar.selectbox(
     "Menu",
@@ -91,8 +121,14 @@ menu = st.sidebar.selectbox(
 # HOME
 # ==========================
 if menu == "🏠 Home":
+
     st.title("🧠 NeuroLearn AI")
-    st.info("Upload notes → Generate exam → Take test → View results")
+
+    st.markdown("""
+    <div class='card'>
+    🚀 Upload Notes → AI generates exam → You take test → Get AI feedback + rank
+    </div>
+    """, unsafe_allow_html=True)
 
 # ==========================
 # UPLOAD NOTES
@@ -150,7 +186,7 @@ elif menu == "🤖 Generate Exam":
         st.rerun()
 
 # ==========================
-# EXAM MODE (FIXED)
+# EXAM MODE
 # ==========================
 elif menu == "🧠 Exam Mode":
 
@@ -176,7 +212,7 @@ elif menu == "🧠 Exam Mode":
 
     question = q[i]
 
-    st.subheader(f"Q{i+1}. {question['question']}")
+    st.markdown(f"### Q{i+1}. {question['question']}")
 
     choice = st.radio("Choose:", question["options"], key=f"q_{i}")
 
@@ -197,12 +233,12 @@ elif menu == "🧠 Exam Mode":
                 st.session_state.index += 1
             else:
                 st.session_state.exam_active = False
-                st.success("Exam Finished!")
+                st.success("Exam Completed!")
 
             st.rerun()
 
 # ==========================
-# RESULT
+# RESULT + AI FEEDBACK + RANK
 # ==========================
 elif menu == "📊 Result":
 
@@ -214,15 +250,56 @@ elif menu == "📊 Result":
     ans = st.session_state.answers
 
     score = 0
+    wrong = []
 
     for i, item in enumerate(q):
+
         correct = item["answer"]
-        selected = ans.get(i, None)
+        selected = ans.get(i)
 
         if selected == correct:
             score += 1
+        else:
+            wrong.append(item)
 
     st.success(f"Score: {score}/{len(q)}")
+
+    # ================= BADGE SYSTEM =================
+    if score >= 4:
+        badge = "🏆 Genius"
+    elif score >= 3:
+        badge = "🥈 Smart"
+    else:
+        badge = "📘 Learner"
+
+    st.info(f"Your Badge: {badge}")
+
+    # ================= AI FEEDBACK =================
+    if wrong:
+
+        st.subheader("📉 AI Feedback")
+
+        for w in wrong:
+            st.warning(f"{w['question']}")
+            st.info(f"Explanation: {w.get('explanation','No explanation')}")
+
+    # ================= SAVE LEADERBOARD =================
+    name = st.text_input("Enter Name")
+
+    if st.button("Save Result") and name:
+
+        lb = pd.read_csv(leaderboard_file)
+
+        lb.loc[len(lb)] = [
+            name,
+            score,
+            badge,
+            datetime.now().strftime("%Y-%m-%d")
+        ]
+
+        lb.to_csv(leaderboard_file, index=False)
+
+        st.success("Saved!")
 
 # ==========================
 # LEADERBOARD
@@ -232,4 +309,5 @@ elif menu == "🏆 Leaderboard":
     st.title("🏆 Leaderboard")
 
     lb = pd.read_csv(leaderboard_file)
+
     st.dataframe(lb.sort_values(by="Score", ascending=False))
