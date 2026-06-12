@@ -302,11 +302,8 @@ def generate():
 
         st.session_state.start_time = time.time()
 
-        # ✅ IMPORTANT FLAG
-        st.session_state.exam_ready = True
-
         st.success("Exam Ready!")
-
+      
 # ==========================
 # EXAM MODE
 # ==========================
@@ -319,7 +316,7 @@ def exam():
     q = st.session_state.questions
 
     
-    if len(q) == 0 or not st.session_state.get("exam_ready", False):
+    if not q:
         st.warning("Generate exam first")
         return
 
