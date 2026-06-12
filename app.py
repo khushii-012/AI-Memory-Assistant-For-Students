@@ -278,33 +278,34 @@ def upload():
 # ==========================
 def generate():
 
-    top_bar() 
-    
+    top_bar()
+
     st.title("🤖 Generate Exam")
 
     db = pd.read_csv(notes_file)
 
-if len(db) == 0:
-    st.warning("Upload notes first")
-    return
+    # ✅ FIXED INDENTATION
+    if len(db) == 0:
+        st.warning("Upload notes first")
+        return
 
-topic = st.selectbox("Topic", db["Topic"].unique())
-difficulty = st.selectbox("Difficulty", ["Easy", "Medium", "Hard"])
+    topic = st.selectbox("Topic", db["Topic"].unique())
+    difficulty = st.selectbox("Difficulty", ["Easy", "Medium", "Hard"])
 
-if st.button("Generate"):
+    if st.button("Generate"):
 
-    notes = db[db["Topic"] == topic]["Notes"].values[0]
+        notes = db[db["Topic"] == topic]["Notes"].values[0]
 
-    st.session_state.questions = generate_mcqs(notes, difficulty)
-    st.session_state.index = 0
-    st.session_state.answers = {}
+        st.session_state.questions = generate_mcqs(notes, difficulty)
+        st.session_state.index = 0
+        st.session_state.answers = {}
 
-    st.session_state.start_time = time.time()
+        st.session_state.start_time = time.time()
 
-    # ✅ IMPORTANT FLAG
-    st.session_state.exam_ready = True
+        # ✅ IMPORTANT FLAG
+        st.session_state.exam_ready = True
 
-    st.success("Exam Ready!")
+        st.success("Exam Ready!")
 
 # ==========================
 # EXAM MODE
