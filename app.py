@@ -177,6 +177,32 @@ elif menu == "📄 Upload Notes":
             extracted_text[:5000],
             height=300
         )
+    topic_name = st.text_input(
+    "Enter Topic Name"
+)
+
+if st.button("💾 Save Notes"):
+
+    if topic_name.strip() == "":
+        st.warning("Please enter a topic name.")
+
+    else:
+
+        notes_db = pd.read_csv(notes_file)
+
+        new_note = {
+            "Topic": topic_name,
+            "Notes": extracted_text
+        }
+
+        notes_db.loc[len(notes_db)] = new_note
+
+        notes_db.to_csv(
+            notes_file,
+            index=False
+        )
+
+        st.success("Notes Saved Successfully!")    
 # ==========================
 # 📝 TAKE QUIZ (UPDATED - KPI TRACKING)
 # ==========================
