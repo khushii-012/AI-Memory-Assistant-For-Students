@@ -16,7 +16,47 @@ def generate_mcqs_with_ai(notes_text):
         api_key=st.secrets["GROQ_API_KEY"]
     )
 
-   prompt = f"""
+    prompt = f"""
+Generate exactly 5 multiple choice questions from the notes.
+
+STRICT RULES:
+- Each question MUST be on separate lines
+- Each option MUST be on a new line
+- Do NOT write options in same line
+- Do NOT add extra explanation
+
+FORMAT:
+
+Q1: Question text
+A) option 1
+B) option 2
+C) option 3
+D) option 4
+ANSWER: B
+
+Q2: Question text
+A) option 1
+B) option 2
+C) option 3
+D) option 4
+ANSWER: C
+
+Notes:
+{notes_text[:3000]}
+"""
+
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ],
+        temperature=0.3
+    )
+
+    return response.choices[0].message.content
 Generate exactly 5 multiple choice questions from the notes.
 
 STRICT RULES:
