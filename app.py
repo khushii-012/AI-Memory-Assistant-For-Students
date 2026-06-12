@@ -317,7 +317,7 @@ def exam():
 
     q = st.session_state.questions
 
-    if not t.session_state.exam_ready or len(q) == 0:
+ if not t.session_state.exam_ready or len(q) == 0:
     st.warning("Generate exam first")
     return
 
