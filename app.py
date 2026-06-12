@@ -99,7 +99,8 @@ defaults = {
     "index": 0,
     "answers": {},
     "start_time": None,
-    "time_limit": 120
+    "time_limit": 120,
+    "exam_ready": False
 }
 
 for k, v in defaults.items():
@@ -290,16 +291,20 @@ def generate():
     topic = st.selectbox("Topic", db["Topic"].unique())
     difficulty = st.selectbox("Difficulty", ["Easy","Medium","Hard"])
 
-    if st.button("Generate"):
+   if st.button("Generate"):
 
-        notes = db[db["Topic"] == topic]["Notes"].values[0]
+    notes = db[db["Topic"] == topic]["Notes"].values[0]
 
-        st.session_state.questions = generate_mcqs(notes, difficulty)
-        st.session_state.index = 0
-        st.session_state.answers = {}
-        st.session_state.start_time = time.time()
+    st.session_state.questions = generate_mcqs(notes, difficulty)
+    st.session_state.index = 0
+    st.session_state.answers = {}
 
-        st.success("Exam Ready!")
+    st.session_state.start_time = time.time()
+
+    # ✅ IMPORTANT FLAG
+    st.session_state.exam_ready = True
+
+    st.success("Exam Ready!")
 
 # ==========================
 # EXAM MODE
@@ -312,9 +317,9 @@ def exam():
 
     q = st.session_state.questions
 
-    if not q:
-        st.warning("Generate exam first")
-        return
+    if not t.session_state.exam_ready or len(q) == 0:
+    st.warning("Generate exam first")
+    return
 
     i = st.session_state.index
     question = q[i]
