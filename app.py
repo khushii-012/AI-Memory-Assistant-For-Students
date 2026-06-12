@@ -231,47 +231,47 @@ elif menu == "🤖 Generate Quiz":
             notes_db["Topic"] == selected_topic
         ]["Notes"].values[0]
 
-        st.subheader("Generated Questions")
+        st.subheader("Generated MCQs")
 
         sentences = selected_note.split(".")
 
-       generated_mcqs = []
+        generated_mcqs = []
 
-for sentence in sentences[:5]:
+        for sentence in sentences[:5]:
 
-    sentence = sentence.strip()
+            sentence = sentence.strip()
 
-    if len(sentence) > 30:
+            if len(sentence) > 30:
 
-        mcq = {
-            "question": "Which statement appears in your notes?",
-            "options": [
-                sentence,
-                "None of the above",
-                "Random Concept A",
-                "Random Concept B"
-            ],
-            "answer": sentence
-        }
+                mcq = {
+                    "question": "Which statement appears in your notes?",
+                    "options": [
+                        sentence,
+                        "None of the above",
+                        "Random Concept A",
+                        "Random Concept B"
+                    ],
+                    "answer": sentence
+                }
 
-        generated_mcqs.append(mcq)
+                generated_mcqs.append(mcq)
 
-for i, mcq in enumerate(generated_mcqs):
+        for i, mcq in enumerate(generated_mcqs):
 
-    st.subheader(f"Q{i+1}")
+            st.subheader(f"Q{i+1}")
 
-    st.write(mcq["question"])
+            st.write(mcq["question"])
 
-    selected = st.radio(
-        "Choose Answer",
-        mcq["options"],
-        key=f"mcq_{i}"
-    )
+            selected = st.radio(
+                "Choose Answer",
+                mcq["options"],
+                key=f"mcq_{i}"
+            )
 
- if selected == mcq["answer"]:
-        st.success("Correct")
-    else:
-        st.error("Incorrect")
+            if selected == mcq["answer"]:
+                st.success("Correct")
+            else:
+                st.error("Incorrect")
 # ==========================
 # 📝 TAKE QUIZ (UPDATED - KPI TRACKING)
 # ==========================
