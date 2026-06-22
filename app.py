@@ -7,408 +7,828 @@ import time
 from datetime import datetime
 from groq import Groq
 
+# =====================================
+# PAGE CONFIG
+# =====================================
+st.set_page_config(
+    page_title="NeuroLearn AI",
+    page_icon="🧠",
+    layout="wide"
+)
+
+# =====================================
+# CUSTOM CSS
+# =====================================
+st.markdown("""
+<style>
+
+.main {
+    background: linear-gradient(135deg, #0f1117, #1a1d24);
+}
+
+h1,h2,h3 {
+    color: #00ffcc;
+}
+
+.subtitle {
+    text-align:center;
+    color:#aaa;
+    font-size:18px;
+}
+
+.feature-card {
+    background: rgba(255,255,255,0.05);
+    border:1px solid rgba(0,255,204,0.2);
+    padding:25px;
+    border-radius:18px;
+    text-align:center;
+    box-shadow:0 0 15px rgba(0,255,204,0.05);
+}
+
+.stButton > button {
+    background: linear-gradient(90deg,#00ffcc,#00b3ff);
+    color:black;
+    border:none;
+    border-radius:12px;
+    font-weight:bold;
+    height:3em;
+    width:100%;
+}
+
+.badge {
+    background:#00ffcc;
+    color:black;
+    padding:6px 14px;
+    border-radius:20px;
+    font-weight:bold;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+# =====================================
+# SESSION STATE
+# =====================================
+defaults = {
+    "page": "home",
+    "questions": [],
+    "answers": {},
+    "current_question": 0,
+    "score": 0,
+    "exam_submitted": False,
+    "start_time": None,
+    "time_limit": 300,
+    "current_topic": ""
+}
+
+for key, value in defaults.items():
+    if key not in st.session_state:
+        st.session_state[key] = value
+
+# =====================================
+# FILES
+# =====================================
+NOTES_FILE = "notes.csv"
+LEADERBOARD_FILE = "leaderboard.csv"
+
+if not os.path.exists(NOTES_FILE):
+    pd.DataFrame(
+        columns=["Topic", "Notes"]
+    ).to_csv(NOTES_FILE, index=False)
+
+if not os.path.exists(LEADERBOARD_FILE):
+    pd.DataFrame(
+        columns=[
+            "Name",
+            "Score",
+            "Badge",
+            "Topic",
+            "Date"
+        ]
+    ).to_csv(LEADERBOARD_FILE, index=False)
+
+# =====================================
+# NAVIGATION
+# =====================================
+def go_home():
+    st.session_state.page = "home"
+    st.rerun()
 
 def top_bar():
-    col1, col2, col3 = st.columns([1, 6, 1])
+
+    col1, col2, col3 = st.columns([1,5,1])
 
     with col1:
         if st.button("🏠 Home"):
             go_home()
 
     with col3:
-        st.markdown("🧠 NeuroLearn AI")
+        st.markdown("### 🧠")
 
-# ==========================
-# PAGE CONFIG
-# ==========================
-st.set_page_config(page_title="NeuroLearn AI", page_icon="🧠", layout="wide")
+# =====================================
+# LOAD DATA
+# =====================================
+def load_notes():
+    return pd.read_csv(NOTES_FILE)
 
-st.markdown("""
-<style>
+def load_leaderboard():
+    return pd.read_csv(LEADERBOARD_FILE)
 
-/* GLOBAL BACKGROUND */
-.main {
-    background: linear-gradient(135deg, #0f1117, #1a1d24);
-}
+# =====================================
+# SAVE NOTE
+# =====================================
+def save_note(topic, text):
 
-/* TITLE */
-h1 {
-    text-align: center;
-    color: #00ffcc;
-    font-size: 42px;
-    font-weight: 800;
-    margin-bottom: 10px;
-}
+    db = load_notes()
 
-/* SUBTITLE */
-.subtitle {
-    text-align: center;
-    color: #aaa;
-    font-size: 18px;
-    margin-bottom: 40px;
-}
+    db.loc[len(db)] = [
+        topic,
+        text
+    ]
 
-/* FEATURE CARD */
-.feature-card {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(0,255,204,0.2);
-    padding: 25px;
-    border-radius: 18px;
-    text-align: center;
-    transition: 0.3s;
-    cursor: pointer;
-    box-shadow: 0 0 15px rgba(0,255,204,0.05);
-}
+    db.to_csv(
+        NOTES_FILE,
+        index=False
+    )
 
-.feature-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 0 25px rgba(0,255,204,0.3);
-    border: 1px solid rgba(0,255,204,0.6);
-}
+# =====================================
+# BADGE LOGIC
+# =====================================
+def get_badge(score, total):
 
-/* BUTTON */
-.stButton>button {
-    background: linear-gradient(90deg, #00ffcc, #00b3ff);
-    color: black;
-    border-radius: 12px;
-    height: 3em;
-    font-weight: bold;
-    width: 100%;
-    border: none;
-}
+    if total == 0:
+        return "Learner"
 
-/* BADGE STYLE */
-.badge {
-    background: #00ffcc;
-    color: black;
-    padding: 5px 12px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: bold;
-}
+    percent = (score / total) * 100
 
-</style>
-""", unsafe_allow_html=True)
+    if percent >= 90:
+        return "🏆 Genius"
 
-# ==========================
-# SESSION STATE
-# ==========================
-defaults = {
-    "page": "home",
-    "questions": [],
-    "index": 0,
-    "answers": {},
-    "start_time": None,
-    "time_limit": 120,
-    "exam_ready": False,
-    "exam_loaded": False
-}
+    elif percent >= 70:
+        return "🥈 Smart"
 
-for k, v in defaults.items():
-    if k not in st.session_state:
-        st.session_state[k] = v
+    elif percent >= 50:
+        return "📘 Learner"
 
-def go_home():
-    st.session_state.page = "home"
-    st.rerun()
+    return "🌱 Beginner"
 
-# ==========================
-# FILES
-# ==========================
-notes_file = "notes.csv"
-leaderboard_file = "leaderboard.csv"
-
-if not os.path.exists(notes_file):
-    pd.DataFrame(columns=["Topic", "Notes"]).to_csv(notes_file, index=False)
-
-if not os.path.exists(leaderboard_file):
-    pd.DataFrame(columns=["Name", "Score", "Badge", "Date"]).to_csv(leaderboard_file, index=False)
-
-# ==========================
-# AI ENGINE
-# ==========================
+# =====================================
+# AI EXAM GENERATOR
+# =====================================
 def generate_mcqs(notes, difficulty):
 
-    client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+    client = Groq(
+        api_key=st.secrets["GROQ_API_KEY"]
+    )
 
     prompt = f"""
-Generate 5 MCQs.
+You are an exam creator.
+
+Generate exactly 5 MCQs.
 
 Difficulty: {difficulty}
 
-Return JSON:
-{{
- "questions": [
-  {{
-   "question": "...",
-   "options": ["A","B","C","D"],
-   "answer": "A",
-   "explanation": "short explanation"
-  }}
- ]
-}}
+Return ONLY valid JSON.
+
+Format:
+
+{
+  "question":"...",
+  "options":[
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+  ],
+  "answer":"Option A",
+  "explanation":"..."
+}
 
 Notes:
-{notes[:2500]}
+
+{notes[:3000]}
 """
 
-    res = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.2
-    )
-
     try:
-        return json.loads(res.choices[0].message.content)["questions"]
-    except:
+
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role":"user",
+                    "content":prompt
+                }
+            ],
+            temperature=0.2
+        )
+
+        raw = response.choices[0].message.content
+
+        cleaned = (
+            raw
+            .replace("```json", "")
+            .replace("```", "")
+            .strip()
+        )
+
+        data = json.loads(cleaned)
+
+        return data.get("questions", [])
+
+    except Exception as e:
+
+        st.error(f"AI Error: {e}")
+
         return []
 
-# ==========================
-# HOME PAGE (MODERN DASHBOARD)
-# ==========================
+# =====================================
+# EXAM RESET
+# =====================================
+def reset_exam():
+
+    st.session_state.questions = []
+    st.session_state.answers = {}
+    st.session_state.current_question = 0
+    st.session_state.score = 0
+    st.session_state.exam_submitted = False
+    st.session_state.start_time = None
+
+
+# =====================================
+# HOME PAGE
+# =====================================
 def home():
 
     st.title("🧠 NeuroLearn AI")
-    st.markdown('<p class="subtitle">Turn your notes into smart exams with AI-powered learning</p>', unsafe_allow_html=True)
+
+    st.markdown(
+        '<p class="subtitle">Turn your notes into smart AI-powered exams</p>',
+        unsafe_allow_html=True
+    )
 
     st.markdown("---")
 
-    # TOP STATS SECTION
+    # =====================
+    # STATS
+    # =====================
+    notes_count = len(load_notes())
+
+    try:
+        lb = load_leaderboard()
+
+        if len(lb) > 0:
+            avg_score = round(lb["Score"].mean(), 2)
+        else:
+            avg_score = 0
+
+    except:
+        avg_score = 0
+
+    s1, s2, s3 = st.columns(3)
+
+    with s1:
+        st.metric("📄 Notes Uploaded", notes_count)
+
+    with s2:
+        st.metric("📝 Exams Taken", len(load_leaderboard()))
+
+    with s3:
+        st.metric("📊 Average Score", avg_score)
+
+    st.markdown("---")
+
+    # =====================
+    # CARDS
+    # =====================
     col1, col2, col3 = st.columns(3)
 
     with col1:
+
         st.markdown("""
         <div class="feature-card">
-            <h3>📄 Notes Engine</h3>
-            <p>Upload PDF & convert into AI-ready knowledge</p>
+        <h3>📄 Upload Notes</h3>
+        <p>Upload PDF study material</p>
         </div>
         """, unsafe_allow_html=True)
 
         if st.button("Open Notes"):
             st.session_state.page = "upload"
+            st.rerun()
 
     with col2:
+
         st.markdown("""
         <div class="feature-card">
-            <h3>🤖 AI Exam Generator</h3>
-            <p>Auto-generate MCQs using LLM intelligence</p>
+        <h3>🤖 Generate Exam</h3>
+        <p>Create MCQs instantly using AI</p>
         </div>
         """, unsafe_allow_html=True)
 
         if st.button("Generate Exam"):
             st.session_state.page = "generate"
+            st.rerun()
 
     with col3:
+
         st.markdown("""
         <div class="feature-card">
-            <h3>🧠 Live Exam Mode</h3>
-            <p>Timed exam with smart navigation system</p>
+        <h3>🏆 Leaderboard</h3>
+        <p>View top learners</p>
         </div>
         """, unsafe_allow_html=True)
 
-        if st.button("Start Exam"):
-            if st.session_state.questions:
-                st.session_state.page = "exam"
-            else:
-                st.warning("Please generate exam first")
-
-    st.markdown("---")
-
-    # SECOND ROW
-    col4, col5 = st.columns(2)
-
-    with col4:
-        st.markdown("""
-        <div class="feature-card">
-            <h3>📊 Analytics Dashboard</h3>
-            <p>View performance, score & weak areas</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-        if st.button("View Results"):
-            st.session_state.page = "result"
-
-    with col5:
-        st.markdown("""
-        <div class="feature-card">
-            <h3>🏆 Leaderboard</h3>
-            <p>Compete with top learners & track ranking</p>
-        </div>
-        """, unsafe_allow_html=True)
-
-        if st.button("View Leaderboard"):
+        if st.button("Leaderboard"):
             st.session_state.page = "leaderboard"
+            st.rerun()
 
     st.markdown("---")
 
-    # BOTTOM INFO PANEL
-    st.markdown("""
-    <div style='text-align:center; padding:20px; color:#888;'>
-        ⚡ Powered by Groq AI • Built for Smart Learning • NeuroLearn v2.0
-    </div>
-    """, unsafe_allow_html=True)
+    # =====================
+    # CONTINUE EXAM
+    # =====================
+    if len(st.session_state.questions) > 0:
 
-# ==========================
-# UPLOAD
-# ==========================
+        st.success("✅ Exam Ready")
+
+        if st.button("🚀 Continue Exam"):
+            st.session_state.page = "exam"
+            st.rerun()
+
+    st.markdown("---")
+
+    st.markdown(
+        """
+        <center>
+        ⚡ Powered by Groq AI <br>
+        NeuroLearn AI v2.0
+        </center>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+# =====================================
+# UPLOAD PAGE
+# =====================================
 def upload():
-    top_bar() 
+
+    top_bar()
+
     st.title("📄 Upload Notes")
 
-    # 🔙 BACK BUTTON (IMPORTANT FIX)
-    if st.button("⬅ Back to Dashboard"):
-        st.session_state.page = "home"
-        st.rerun()
-
-    file = st.file_uploader("Upload PDF", type=["pdf"])
+    file = st.file_uploader(
+        "Upload PDF",
+        type=["pdf"]
+    )
 
     if file:
+
         text = ""
+
         pdf = PdfReader(file)
 
-        for p in pdf.pages:
-            text += p.extract_text() or ""
+        for page in pdf.pages:
+            text += page.extract_text() or ""
 
-        topic = st.text_input("Topic")
+        st.text_area(
+            "Preview",
+            text[:2000],
+            height=250
+        )
 
-        if st.button("Save") and topic:
-            db = pd.read_csv(notes_file)
-            db.loc[len(db)] = [topic, text]
-            db.to_csv(notes_file, index=False)
+        topic = st.text_input(
+            "Topic Name"
+        )
 
-            st.success("Saved!")
-# ==========================
+        if st.button("💾 Save Notes"):
+
+            if topic.strip() == "":
+                st.warning("Enter topic name")
+                return
+
+            save_note(topic, text)
+
+            st.success("Notes Saved Successfully")
+
+            st.dataframe(load_notes())
+
+
+# =====================================
 # GENERATE EXAM
-# ==========================
+# =====================================
 def generate():
 
     top_bar()
 
     st.title("🤖 Generate Exam")
 
-    db = pd.read_csv(notes_file)
+    db = load_notes()
 
     if len(db) == 0:
-        st.warning("Upload notes first")
+
+        st.warning(
+            "Upload notes first"
+        )
+
         return
 
-    topic = st.selectbox("Topic", db["Topic"].unique())
-    difficulty = st.selectbox("Difficulty", ["Easy", "Medium", "Hard"])
+    topic = st.selectbox(
+        "Select Topic",
+        db["Topic"].unique()
+    )
 
-    if st.button("Generate"):
+    difficulty = st.selectbox(
+        "Difficulty",
+        [
+            "Easy",
+            "Medium",
+            "Hard"
+        ]
+    )
 
-        notes = db[db["Topic"] == topic]["Notes"].values[0]
+    if st.button("⚡ Generate AI Exam"):
 
-        st.session_state.questions = generate_mcqs(notes, difficulty)
+        with st.spinner(
+            "Generating Questions..."
+        ):
 
-        # DEBUG
-        st.write("DEBUG:", st.session_state.questions)
+            notes = db[
+                db["Topic"] == topic
+            ]["Notes"].values[0]
 
-        st.session_state.index = 0
-        st.session_state.answers = {}
-        st.session_state.start_time = time.time()
+            questions = generate_mcqs(
+                notes,
+                difficulty
+            )
 
-        # IMPORTANT
-        st.session_state.exam_loaded = True
+            if len(questions) == 0:
 
-        st.success("Exam Ready!")
+                st.error(
+                    "AI failed to generate questions"
+                )
+
+                return
+
+            st.session_state.questions = questions
+            st.session_state.answers = {}
+            st.session_state.current_question = 0
+            st.session_state.exam_submitted = False
+            st.session_state.current_topic = topic
+            st.session_state.start_time = time.time()
+
+            st.success(
+                "Exam Generated Successfully"
+            )
+
+            # AUTO OPEN EXAM
+            st.session_state.page = "exam"
+            st.rerun()
 
 
-# ==========================
-# GENERATE EXAM
-# ==========================
-def generate():
+# =====================================
+# EXAM PAGE
+# =====================================
+def exam():
 
     top_bar()
 
-    st.title("🤖 Generate Exam")
+    st.title("🧠 Live Exam")
 
-    db = pd.read_csv(notes_file)
+    questions = st.session_state.questions
 
-    if len(db) == 0:
-        st.warning("Upload notes first")
+    if len(questions) == 0:
+
+        st.warning(
+            "Generate exam first"
+        )
+
         return
 
-    topic = st.selectbox("Topic", db["Topic"].unique())
-    difficulty = st.selectbox("Difficulty", ["Easy", "Medium", "Hard"])
+    # =====================
+    # TIMER
+    # =====================
+    elapsed = (
+        time.time()
+        - st.session_state.start_time
+    )
 
-    if st.button("Generate"):
+    remaining = max(
+        0,
+        st.session_state.time_limit
+        - elapsed
+    )
 
-        notes = db[db["Topic"] == topic]["Notes"].values[0]
+    st.progress(
+        remaining
+        / st.session_state.time_limit
+    )
 
-        st.session_state.questions = generate_mcqs(notes, difficulty)
+    mins = int(remaining // 60)
+    secs = int(remaining % 60)
 
-        # DEBUG
-        st.write("DEBUG:", st.session_state.questions)
+    st.info(
+        f"⏳ Time Left: {mins}:{secs:02d}"
+    )
 
-        st.session_state.index = 0
-        st.session_state.answers = {}
-        st.session_state.start_time = time.time()
+    if remaining <= 0:
 
-        # IMPORTANT
-        st.session_state.exam_loaded = True
+        st.session_state.page = "result"
+        st.rerun()
 
-        st.success("Exam Ready!")
-# ==========================
-# RESULT
-# ==========================
+    # =====================
+    # QUESTION PALETTE
+    # =====================
+    st.subheader(
+        "Question Palette"
+    )
+
+    palette_cols = st.columns(
+        len(questions)
+    )
+
+    for idx in range(len(questions)):
+
+        with palette_cols[idx]:
+
+            if st.button(
+                str(idx + 1),
+                key=f"nav_{idx}"
+            ):
+                st.session_state.current_question = idx
+                st.rerun()
+
+    st.markdown("---")
+
+    i = st.session_state.current_question
+
+    q = questions[i]
+
+    st.subheader(
+        f"Question {i+1}/{len(questions)}"
+    )
+
+    st.write(q["question"])
+
+    previous_answer = (
+        st.session_state.answers.get(i)
+    )
+
+    selected = st.radio(
+        "Choose Answer",
+        q["options"],
+        index=(
+            q["options"].index(previous_answer)
+            if previous_answer in q["options"]
+            else None
+        ),
+        key=f"q_{i}"
+    )
+
+    st.session_state.answers[i] = selected
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+
+        if st.button("⬅ Previous"):
+
+            if i > 0:
+
+                st.session_state.current_question -= 1
+                st.rerun()
+
+    with col2:
+
+        if st.button("✅ Submit Exam"):
+
+            st.session_state.page = "result"
+            st.rerun()
+
+    with col3:
+
+        if st.button("Next ➡"):
+
+            if i < len(questions) - 1:
+
+                st.session_state.current_question += 1
+                st.rerun()
+
+
+# =====================================
+# RESULT PAGE
+# =====================================
 def result():
 
-    top_bar() 
+    top_bar()
 
-    st.title("📊 Results")
+    st.title("📊 Exam Results")
 
-    q = st.session_state.questions
-    ans = st.session_state.answers
+    questions = st.session_state.questions
 
-    if not q:
+    if len(questions) == 0:
         st.warning("No exam found")
         return
 
     score = 0
 
-    for i, item in enumerate(q):
-        if ans.get(i) == item["answer"]:
+    st.markdown("---")
+
+    for i, q in enumerate(questions):
+
+        user_answer = st.session_state.answers.get(i)
+
+        correct_answer = q["answer"]
+
+        if user_answer == correct_answer:
             score += 1
+            st.success(
+                f"Q{i+1}: Correct ✅"
+            )
+        else:
+            st.error(
+                f"Q{i+1}: Incorrect ❌"
+            )
 
-    st.success(f"Score: {score}/{len(q)}")
+        st.write(
+            f"**Question:** {q['question']}"
+        )
 
-    if score >= 4:
-        st.info("🏆 Badge: Genius")
-    elif score >= 3:
-        st.info("🥈 Badge: Smart")
-    else:
-        st.info("📘 Badge: Learner")
+        st.write(
+            f"**Your Answer:** {user_answer}"
+        )
 
-# ==========================
-# LEADERBOARD
-# ==========================
+        st.write(
+            f"**Correct Answer:** {correct_answer}"
+        )
+
+        if "explanation" in q:
+            st.info(
+                f"💡 {q['explanation']}"
+            )
+
+        st.markdown("---")
+
+    # =====================
+    # SCORE
+    # =====================
+    total = len(questions)
+
+    badge = get_badge(
+        score,
+        total
+    )
+
+    st.session_state.score = score
+
+    st.success(
+        f"🎯 Final Score: {score}/{total}"
+    )
+
+    st.markdown(
+        f"### {badge}"
+    )
+
+    # =====================
+    # PERFORMANCE
+    # =====================
+    percent = round(
+        (score / total) * 100,
+        2
+    )
+
+    st.metric(
+        "Performance",
+        f"{percent}%"
+    )
+
+    # =====================
+    # SAVE SCORE
+    # =====================
+    st.markdown("---")
+
+    name = st.text_input(
+        "Enter Your Name"
+    )
+
+    if st.button("🏆 Save Score"):
+
+        if name.strip() == "":
+            st.warning(
+                "Enter your name"
+            )
+            return
+
+        lb = load_leaderboard()
+
+        lb.loc[len(lb)] = [
+            name,
+            score,
+            badge,
+            st.session_state.current_topic,
+            datetime.now().strftime(
+                "%Y-%m-%d"
+            )
+        ]
+
+        lb.to_csv(
+            LEADERBOARD_FILE,
+            index=False
+        )
+
+        st.success(
+            "Score Saved"
+        )
+
+    # =====================
+    # ACTION BUTTONS
+    # =====================
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        if st.button(
+            "🏠 Back To Home"
+        ):
+            go_home()
+
+    with col2:
+
+        if st.button(
+            "🔄 New Exam"
+        ):
+
+            reset_exam()
+
+            st.session_state.page = "generate"
+
+            st.rerun()
+
+
+# =====================================
+# LEADERBOARD PAGE
+# =====================================
 def leaderboard():
 
-    top_bar() 
+    top_bar()
 
     st.title("🏆 Leaderboard")
 
-    lb = pd.read_csv(leaderboard_file)
-    st.dataframe(lb)
+    lb = load_leaderboard()
 
-# ==========================
+    if len(lb) == 0:
+
+        st.info(
+            "No scores yet"
+        )
+
+        return
+
+    lb = lb.sort_values(
+        by="Score",
+        ascending=False
+    )
+
+    st.dataframe(
+        lb,
+        use_container_width=True
+    )
+
+    st.markdown("---")
+
+    st.subheader(
+        "Top Performer"
+    )
+
+    top = lb.iloc[0]
+
+    st.success(
+        f"{top['Name']} • {top['Score']} • {top['Badge']}"
+    )
+
+
+# =====================================
 # ROUTER
-# ==========================
+# =====================================
 if st.session_state.page == "home":
+
     home()
 
 elif st.session_state.page == "upload":
+
     upload()
 
 elif st.session_state.page == "generate":
+
     generate()
 
 elif st.session_state.page == "exam":
+
     exam()
 
 elif st.session_state.page == "result":
+
     result()
 
 elif st.session_state.page == "leaderboard":
+
     leaderboard()
