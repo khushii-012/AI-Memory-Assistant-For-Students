@@ -288,7 +288,6 @@ def generate():
 
     db = pd.read_csv(notes_file)
 
-
     if len(db) == 0:
         st.warning("Upload notes first")
         return
@@ -296,54 +295,23 @@ def generate():
     topic = st.selectbox("Topic", db["Topic"].unique())
     difficulty = st.selectbox("Difficulty", ["Easy", "Medium", "Hard"])
 
-     if st.button("Generate"):
+    if st.button("Generate"):
 
-     notes = db[db["Topic"] == topic]["Notes"].values[0]
- 
-     st.session_state.questions = generate_mcqs(notes, difficulty)
+        notes = db[db["Topic"] == topic]["Notes"].values[0]
 
-     st.write("DEBUG:", st.session_state.questions)
+        st.session_state.questions = generate_mcqs(notes, difficulty)
 
-     st.success("Exam Ready!")
-# ==========================
-# EXAM MODE
-# ==========================
-def exam():
+        # DEBUG
+        st.write("DEBUG:", st.session_state.questions)
 
-    top_bar()
+        st.session_state.index = 0
+        st.session_state.answers = {}
+        st.session_state.start_time = time.time()
 
-    st.title("🧠 Exam Mode")
+        # IMPORTANT
+        st.session_state.exam_loaded = True
 
-    q = st.session_state.questions
-
-    
-  if not st.session_state.get("exam_loaded", False) or len(q) == 0:
-        st.warning("Generate exam first")
-        return
-
-    i = st.session_state.index
-    question = q[i]
-
-    st.write(f"Q{i+1}. {question['question']}")
-
-    choice = st.radio("Answer:", question["options"], key=i)
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        if st.button("⬅ Prev") and i > 0:
-            st.session_state.index -= 1
-            st.rerun()
-
-    with col2:
-        if st.button("Next ➡"):
-
-            st.session_state.answers[i] = choice
-
-            if i < len(q) - 1:
-                st.session_state.index += 1
-
-            st.rerun()
+        st.success("Exam Ready!")
 # ==========================
 # RESULT
 # ==========================
