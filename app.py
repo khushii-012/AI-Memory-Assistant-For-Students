@@ -312,6 +312,43 @@ def generate():
         st.session_state.exam_loaded = True
 
         st.success("Exam Ready!")
+
+
+# ==========================
+# GENERATE EXAM
+# ==========================
+def generate():
+
+    top_bar()
+
+    st.title("🤖 Generate Exam")
+
+    db = pd.read_csv(notes_file)
+
+    if len(db) == 0:
+        st.warning("Upload notes first")
+        return
+
+    topic = st.selectbox("Topic", db["Topic"].unique())
+    difficulty = st.selectbox("Difficulty", ["Easy", "Medium", "Hard"])
+
+    if st.button("Generate"):
+
+        notes = db[db["Topic"] == topic]["Notes"].values[0]
+
+        st.session_state.questions = generate_mcqs(notes, difficulty)
+
+        # DEBUG
+        st.write("DEBUG:", st.session_state.questions)
+
+        st.session_state.index = 0
+        st.session_state.answers = {}
+        st.session_state.start_time = time.time()
+
+        # IMPORTANT
+        st.session_state.exam_loaded = True
+
+        st.success("Exam Ready!")
 # ==========================
 # RESULT
 # ==========================
