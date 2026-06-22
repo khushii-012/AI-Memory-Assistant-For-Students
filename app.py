@@ -296,15 +296,15 @@ def generate():
     topic = st.selectbox("Topic", db["Topic"].unique())
     difficulty = st.selectbox("Difficulty", ["Easy", "Medium", "Hard"])
 
-    if st.button("Generate"):
+     if st.button("Generate"):
 
-    notes = db[db["Topic"] == topic]["Notes"].values[0]
+     notes = db[db["Topic"] == topic]["Notes"].values[0]
+ 
+     st.session_state.questions = generate_mcqs(notes, difficulty)
 
-    st.session_state.questions = generate_mcqs(notes, difficulty)
+     st.write("DEBUG:", st.session_state.questions)
 
-    st.write("DEBUG:", st.session_state.questions)
-
-    st.success("Exam Ready!")
+     st.success("Exam Ready!")
 # ==========================
 # EXAM MODE
 # ==========================
@@ -317,7 +317,7 @@ def exam():
     q = st.session_state.questions
 
     
-    if not st.session_state.get("exam_loaded", False) or len(q) == 0:
+  if not st.session_state.get("exam_loaded", False) or len(q) == 0:
         st.warning("Generate exam first")
         return
 
